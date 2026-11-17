@@ -1,7 +1,7 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as Blockly from 'blockly'
-import { state } from './store'
+import { state, animTarget } from './store'
 import { ic } from './icon'
 import { toolbox, theme, setup, scan } from './blocks'
 import { addFiles } from './sounds'
@@ -12,8 +12,10 @@ const inp = ref(null)
 const ask = ref(null)
 const pos = ref({ x: 40, y: 40 })
 const ap = ref({ x: 0, y: 0 })
+const refs = { pos, ap }
 let ws = null
 let ro = null
+let stop = null
 
 watch(ask, (v, o) => {
   if (v && !o) ap.value = { x: (win.value.clientWidth - 280) / 2, y: (win.value.clientHeight - 140) / 2 }
@@ -31,8 +33,14 @@ function drop(e) {
   addFiles(e.dataTransfer.files, false)
 }
 
-function drag(e, p) {
+function ctx() {
+  const t = animTarget()
+  return t && t.cls ? t.cls : ''
+}
+
+function drag(e, k) {
   if (e.target.closest('button')) return
+  const p = refs[k]
   const sx = e.clientX - p.value.x
   const sy = e.clientY - p.value.y
   const t = e.currentTarget
@@ -52,7 +60,7 @@ onMounted(() => {
     ask.value = { msg, confirm: true, cb }
   })
   ws = Blockly.inject(root.value, {
-    toolbox,
+    toolbox: toolbox(ctx()),
     theme,
     media: import.meta.env.BASE_URL + 'blockly/',
     trashcan: true,
@@ -69,11 +77,13 @@ onMounted(() => {
     if (e.isUiEvent) return
     state.script = Blockly.serialization.workspaces.save(ws)
   })
+  stop = watch(ctx, c => ws.updateToolbox(toolbox(c)))
   ro = new ResizeObserver(() => Blockly.svgResize(ws))
   ro.observe(win.value)
 })
 
 onUnmounted(() => {
+  stop()
   ro.disconnect()
   ws.dispose()
 })
@@ -81,13 +91,13 @@ onUnmounted(() => {
 
 <template>
   <div ref="win" class="panel fixed script" @dragover.prevent @drop.prevent="drop" :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
-    <div class="head" @pointerdown="drag($event, pos)">
+    <div class="head" @pointerdown="drag($event, 'pos')">
       <span>Scripting</span>
       <button class="ic push" title="Close" :style="ic(25, 28)" @click="state.coding = false"></button>
     </div>
     <div ref="root" class="blocks"></div>
     <div v-if="ask" class="panel ask" :style="{ left: ap.x + 'px', top: ap.y + 'px' }">
-      <div class="head" @pointerdown="drag($event, ap)">
+      <div class="head" @pointerdown="drag($event, 'ap')">
         <span>{{ ask.confirm ? 'Confirm' : 'Name' }}</span>
       </div>
       <div class="body">

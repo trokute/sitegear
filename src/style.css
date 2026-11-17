@@ -489,6 +489,7 @@ h4 {
 
 .script .head, .ask .head {
   cursor: move;
+  touch-action: none;
 }
 
 .blocks {

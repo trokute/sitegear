@@ -100,7 +100,7 @@ const sn = { type: 'field_dropdown', name: 'SND', options: [['none', '']] }
 const to = dd('TO', to1)
 const cc = { colour: C.co, ...act }
 
-Blockly.common.defineBlocksWithJsonArray([
+const defs = [
   { type: 'sg_site', message0: 'when site opens', ...hat },
   { type: 'sg_page', message0: 'when page %1 opens', args0: [{ type: 'field_number', name: 'N', value: 1, min: 1, precision: 1 }], ...hat },
   { type: 'sg_key', message0: 'when key %1 is %2', args0: [dd('KEY', keys), dd('ACT', [['pressed', 'press'], ['held', 'hold'], ['released', 'release']])], ...hat },
@@ -171,7 +171,11 @@ Blockly.common.defineBlocksWithJsonArray([
   { type: 'sg_join', message0: 'join %1 %2', args0: [any('A'), any('B')], output: 'String', colour: C.op, inputsInline: true },
   { type: 'sg_letter', message0: 'letter %1 of %2', args0: [num('N'), any('V')], output: 'String', colour: C.op, inputsInline: true },
   { type: 'sg_contains', message0: '%1 contains %2 ?', args0: [any('A'), any('B')], output: 'Boolean', colour: C.op, inputsInline: true }
-])
+]
+
+const objTypes = new Set(defs.filter(d => (d.args0 || []).some(a => a.name === 'OBJ')).map(d => d.type))
+
+Blockly.common.defineBlocksWithJsonArray(defs)
 
 Blockly.Blocks.sg_obj = {
   init() {
@@ -293,139 +297,148 @@ f.sg_join = b => ['String(' + vs(b, 'A') + ') + String(' + vs(b, 'B') + ')', Ord
 f.sg_letter = b => ['String(' + vs(b, 'V') + ').charAt((' + val(b, 'N') + ') - 1)', Order.FUNCTION_CALL]
 f.sg_contains = b => ['String(' + vs(b, 'A') + ').toLowerCase().indexOf(String(' + vs(b, 'B') + ').toLowerCase()) >= 0', Order.RELATIONAL]
 
+let ctx = ''
+
 const sh = (type, fields) => ({ shadow: { type, fields } })
 const n = v => sh('math_number', { NUM: v })
 const t = v => sh('text', { TEXT: v })
-const bk = (type, inputs, fields, extraState) => ({ kind: 'block', type, inputs, fields, extraState })
+const bk = (type, inputs, fields, extraState) => {
+  const fill = ctx && objTypes.has(type) && !(inputs && inputs.OBJ)
+  const i = fill ? { ...inputs, OBJ: { block: { type: 'sg_obj', fields: { C: ctx } } } } : inputs
+  return { kind: 'block', type, inputs: i, fields, extraState }
+}
 const cat = (name, colour, contents) => ({ kind: 'category', name, colour, contents })
 const arith = op => bk('math_arithmetic', { A: n(1), B: n(1) }, { OP: op })
 const cmp = (op, v) => bk('logic_compare', { A: n(0), B: n(v) }, { OP: op })
 
-export const toolbox = {
-  kind: 'categoryToolbox',
-  contents: [
-    cat('Events', C.ev, ['sg_site', 'sg_page', 'sg_key', 'sg_touch', 'sg_every', 'sg_msg', 'sg_send'].map(x => bk(x))),
-    { kind: 'category', name: 'Objects', colour: C.ob, custom: 'OBJECTS' },
-    cat('Motion', C.mo, [
-      bk('sg_steps', { V: n(10) }),
-      bk('sg_turn', { V: n(15) }, { D: '1' }),
-      bk('sg_turn', { V: n(15) }, { D: '-1' }),
-      bk('sg_goto_to'),
-      bk('sg_moveto', { X: n(0), Y: n(0) }),
-      bk('sg_glideto', { T: n(1) }),
-      bk('sg_glide', { X: n(0), Y: n(0), T: n(1) }),
-      bk('sg_dir', { V: n(90) }),
-      bk('sg_towards'),
-      bk('sg_change', { V: n(10) }, { P: 'x' }),
-      bk('sg_set', { V: n(0) }, { P: 'x' }),
-      bk('sg_change', { V: n(10) }, { P: 'y' }),
-      bk('sg_set', { V: n(0) }, { P: 'y' }),
-      bk('sg_bounce'),
-      bk('sg_get', undefined, { P: 'x' }),
-      bk('sg_get', undefined, { P: 'y' }),
-      bk('sg_get', undefined, { P: 'angle' })
-    ]),
-    cat('Looks', C.lo, [
-      bk('sg_show'),
-      bk('sg_color'),
-      bk('sg_text', { V: t('Text') }),
-      bk('sg_set', { V: n(100) }, { P: 'opacity' }),
-      bk('sg_anim', { T: n(1) })
-    ]),
-    cat('Sound', C.so, [
-      { kind: 'label', text: 'Drop audio files here' },
-      bk('sg_playwait'),
-      bk('sg_play'),
-      bk('sg_stopall'),
-      bk('sg_fxchg', { V: n(10) }),
-      bk('sg_fxset', { V: n(100) }),
-      bk('sg_fxclear'),
-      bk('sg_vchg', { V: n(-10) }),
-      bk('sg_vset', { V: n(100) }),
-      bk('sg_vol'),
-      bk('sg_playurl', { V: t('https://') }),
-      bk('sg_bgvol', { V: n(100) })
-    ]),
-    cat('Create', C.cr, [
-      bk('sg_rect', { X: n(0), Y: n(0), W: n(100), H: n(100), R: n(0) }),
-      bk('sg_circle', { X: n(0), Y: n(0), W: n(100), H: n(100) }),
-      bk('sg_newtext', { X: n(0), Y: n(0), V: t('Text'), S: n(32) }),
-      bk('sg_image', { V: t('https://'), X: n(0), Y: n(0), W: n(200) }),
-      bk('sg_dup'),
-      bk('sg_del')
-    ]),
-    cat('Pen', C.pe, [
-      bk('sg_pen'),
-      bk('sg_pencol'),
-      bk('sg_pensize', { S: n(4) }),
-      bk('sg_clear')
-    ]),
-    cat('Layers', C.la, [
-      bk('sg_layer'),
-      bk('sg_set', { V: n(1) }, { P: 'layer' }),
-      bk('sg_change', { V: n(1) }, { P: 'layer' }),
-      bk('sg_get', undefined, { P: 'layer' }),
-      bk('sg_layers'),
-      bk('sg_at', { N: n(1) }),
-      bk('sg_class')
-    ]),
-    cat('Control', C.co, [
-      bk('sg_wait', { T: n(1) }),
-      bk('sg_repeat', { N: n(10) }),
-      bk('sg_forever'),
-      bk('controls_if'),
-      bk('controls_if', undefined, undefined, { hasElse: true }),
-      bk('sg_waituntil'),
-      bk('sg_repuntil'),
-      bk('sg_goto', { P: n(1) }),
-      bk('sg_nav'),
-      bk('sg_link', { V: t('https://') })
-    ]),
-    cat('Sensing', C.se, [
-      bk('sg_touchto'),
-      bk('sg_touching'),
-      bk('sg_dist'),
-      bk('sg_keydown'),
-      bk('sg_mousedown'),
-      bk('sg_mouse', undefined, { A: 'x' }),
-      bk('sg_mouse', undefined, { A: 'y' }),
-      bk('sg_drag'),
-      bk('sg_loud'),
-      bk('sg_timer'),
-      bk('sg_rtimer'),
-      bk('sg_get')
-    ]),
-    cat('Operators', C.op, [
-      arith('ADD'),
-      arith('MINUS'),
-      arith('MULTIPLY'),
-      arith('DIVIDE'),
-      bk('math_random_int', { FROM: n(1), TO: n(10) }),
-      cmp('GT', 50),
-      cmp('LT', 50),
-      cmp('EQ', 50),
-      bk('logic_operation', undefined, { OP: 'AND' }),
-      bk('logic_operation', undefined, { OP: 'OR' }),
-      bk('logic_negate'),
-      bk('sg_join', { A: t('apple'), B: t('banana') }),
-      bk('sg_letter', { N: n(1), V: t('apple') }),
-      bk('text_length', { VALUE: t('apple') }),
-      bk('sg_contains', { A: t('apple'), B: t('a') }),
-      bk('math_modulo', { DIVIDEND: n(10), DIVISOR: n(3) }),
-      bk('math_round', { NUM: n(0) }, { OP: 'ROUND' }),
-      bk('math_number'),
-      bk('text'),
-      bk('logic_boolean'),
-      bk('text_join')
-    ]),
-    { kind: 'category', name: 'Variables', colour: '#ff8c1a', custom: 'VARIABLE' },
-    { kind: 'category', name: 'Functions', colour: '#ff6680', custom: 'PROCEDURE' }
-  ]
+export const toolbox = c => {
+  ctx = c
+  return {
+    kind: 'categoryToolbox',
+    contents: [
+      cat('Events', C.ev, ['sg_site', 'sg_page', 'sg_key', 'sg_touch', 'sg_every', 'sg_msg', 'sg_send'].map(x => bk(x))),
+      { kind: 'category', name: 'Objects', colour: C.ob, custom: 'OBJECTS' },
+      cat('Motion', C.mo, [
+        bk('sg_steps', { V: n(10) }),
+        bk('sg_turn', { V: n(15) }, { D: '1' }),
+        bk('sg_turn', { V: n(15) }, { D: '-1' }),
+        bk('sg_goto_to'),
+        bk('sg_moveto', { X: n(0), Y: n(0) }),
+        bk('sg_glideto', { T: n(1) }),
+        bk('sg_glide', { X: n(0), Y: n(0), T: n(1) }),
+        bk('sg_dir', { V: n(90) }),
+        bk('sg_towards'),
+        bk('sg_change', { V: n(10) }, { P: 'x' }),
+        bk('sg_set', { V: n(0) }, { P: 'x' }),
+        bk('sg_change', { V: n(10) }, { P: 'y' }),
+        bk('sg_set', { V: n(0) }, { P: 'y' }),
+        bk('sg_bounce'),
+        bk('sg_get', undefined, { P: 'x' }),
+        bk('sg_get', undefined, { P: 'y' }),
+        bk('sg_get', undefined, { P: 'angle' })
+      ]),
+      cat('Looks', C.lo, [
+        bk('sg_show'),
+        bk('sg_color'),
+        bk('sg_text', { V: t('Text') }),
+        bk('sg_set', { V: n(100) }, { P: 'opacity' }),
+        bk('sg_anim', { T: n(1) })
+      ]),
+      cat('Sound', C.so, [
+        { kind: 'label', text: 'Drop audio files here' },
+        bk('sg_playwait'),
+        bk('sg_play'),
+        bk('sg_stopall'),
+        bk('sg_fxchg', { V: n(10) }),
+        bk('sg_fxset', { V: n(100) }),
+        bk('sg_fxclear'),
+        bk('sg_vchg', { V: n(-10) }),
+        bk('sg_vset', { V: n(100) }),
+        bk('sg_vol'),
+        bk('sg_playurl', { V: t('https://') }),
+        bk('sg_bgvol', { V: n(100) })
+      ]),
+      cat('Create', C.cr, [
+        bk('sg_rect', { X: n(0), Y: n(0), W: n(100), H: n(100), R: n(0) }),
+        bk('sg_circle', { X: n(0), Y: n(0), W: n(100), H: n(100) }),
+        bk('sg_newtext', { X: n(0), Y: n(0), V: t('Text'), S: n(32) }),
+        bk('sg_image', { V: t('https://'), X: n(0), Y: n(0), W: n(200) }),
+        bk('sg_dup'),
+        bk('sg_del')
+      ]),
+      cat('Pen', C.pe, [
+        bk('sg_pen'),
+        bk('sg_pencol'),
+        bk('sg_pensize', { S: n(4) }),
+        bk('sg_clear')
+      ]),
+      cat('Layers', C.la, [
+        bk('sg_layer'),
+        bk('sg_set', { V: n(1) }, { P: 'layer' }),
+        bk('sg_change', { V: n(1) }, { P: 'layer' }),
+        bk('sg_get', undefined, { P: 'layer' }),
+        bk('sg_layers'),
+        bk('sg_at', { N: n(1) }),
+        bk('sg_class')
+      ]),
+      cat('Control', C.co, [
+        bk('sg_wait', { T: n(1) }),
+        bk('sg_repeat', { N: n(10) }),
+        bk('sg_forever'),
+        bk('controls_if'),
+        bk('controls_if', undefined, undefined, { hasElse: true }),
+        bk('sg_waituntil'),
+        bk('sg_repuntil'),
+        bk('sg_goto', { P: n(1) }),
+        bk('sg_nav'),
+        bk('sg_link', { V: t('https://') })
+      ]),
+      cat('Sensing', C.se, [
+        bk('sg_touchto'),
+        bk('sg_touching'),
+        bk('sg_dist'),
+        bk('sg_keydown'),
+        bk('sg_mousedown'),
+        bk('sg_mouse', undefined, { A: 'x' }),
+        bk('sg_mouse', undefined, { A: 'y' }),
+        bk('sg_drag'),
+        bk('sg_loud'),
+        bk('sg_timer'),
+        bk('sg_rtimer'),
+        bk('sg_get')
+      ]),
+      cat('Operators', C.op, [
+        arith('ADD'),
+        arith('MINUS'),
+        arith('MULTIPLY'),
+        arith('DIVIDE'),
+        bk('math_random_int', { FROM: n(1), TO: n(10) }),
+        cmp('GT', 50),
+        cmp('LT', 50),
+        cmp('EQ', 50),
+        bk('logic_operation', undefined, { OP: 'AND' }),
+        bk('logic_operation', undefined, { OP: 'OR' }),
+        bk('logic_negate'),
+        bk('sg_join', { A: t('apple'), B: t('banana') }),
+        bk('sg_letter', { N: n(1), V: t('apple') }),
+        bk('text_length', { VALUE: t('apple') }),
+        bk('sg_contains', { A: t('apple'), B: t('a') }),
+        bk('math_modulo', { DIVIDEND: n(10), DIVISOR: n(3) }),
+        bk('math_round', { NUM: n(0) }, { OP: 'ROUND' }),
+        bk('math_number'),
+        bk('text'),
+        bk('logic_boolean'),
+        bk('text_join')
+      ]),
+      { kind: 'category', name: 'Variables', colour: '#ff8c1a', custom: 'VARIABLE' },
+      { kind: 'category', name: 'Functions', colour: '#ff6680', custom: 'PROCEDURE' }
+    ]
+  }
 }
 
 export function setup(ws) {
   ws.registerToolboxCategoryCallback('OBJECTS', () => {
-    const l = names()
+    const l = names().sort((a, b) => (b === ctx) - (a === ctx))
     if (!l.length) return [{ kind: 'label', text: 'Right click an element to set its class' }]
     return l.map(c => ({ kind: 'block', type: 'sg_obj', fields: { C: c } }))
   })
