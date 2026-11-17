@@ -1,0 +1,464 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  font-family: 'Comic Sans MS', 'Comic Sans', sans-serif;
+  font-size: 16px;
+  color: #000;
+}
+
+.work {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+
+.frame {
+  margin: 40px auto 340px auto;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  transform-origin: 0 0;
+  box-shadow: 0 0 0 1px #ccc;
+}
+
+.item {
+  position: absolute;
+  user-select: none;
+  touch-action: none;
+  cursor: move;
+}
+
+.item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.txt {
+  width: 100%;
+  height: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: hidden;
+}
+
+.box {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #000;
+  pointer-events: none;
+}
+
+.h {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: #fff;
+  border: 1px solid #000;
+  transform: scale(calc(1 / var(--z)));
+}
+
+.h.a, .h.d {
+  cursor: nwse-resize;
+}
+
+.h.b, .h.c {
+  cursor: nesw-resize;
+}
+
+.stem {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  width: 1px;
+  height: 24px;
+  background: #000;
+  pointer-events: none;
+}
+
+.rot {
+  position: absolute;
+  left: 50%;
+  top: -34px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border: 1px solid #000;
+  border-radius: 50%;
+  background: #fff;
+  transform: scale(calc(1 / var(--z)));
+  cursor: grab;
+}
+
+.panel {
+  border-style: solid;
+  border-width: 8px;
+  border-image: url('./icons/9slice1.png') 40 fill / 8px stretch;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel .head {
+  min-height: 28px;
+}
+
+.panel .head {
+  display: flex;
+  gap: 10px;
+  padding: 0 6px;
+  line-height: 28px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fixed {
+  position: fixed;
+  bottom: 0;
+}
+
+.col {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.col .panel {
+  max-height: 50vh;
+  min-height: 0;
+}
+
+.push {
+  margin-left: auto;
+}
+
+.doc {
+  right: 170px;
+  width: 270px;
+}
+
+.layers {
+  right: 0;
+  width: 170px;
+}
+
+.body {
+  padding: 4px 14px 14px 14px;
+  overflow: auto;
+}
+
+.list {
+  padding: 4px 10px 10px 10px;
+  overflow: auto;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  height: 44px;
+  margin-bottom: 8px;
+  padding: 10px 10px 0 0;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  user-select: none;
+}
+
+.row .bar {
+  width: 4px;
+  height: 34px;
+  margin: -4px 10px 0 6px;
+  background: #fff;
+}
+
+.row.on .bar {
+  background: #777;
+}
+
+.lname {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.line label {
+  width: 70px;
+}
+
+.line input, .line select, .line textarea {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  border: 1px solid #aaa;
+  background: #fff;
+  padding: 2px 6px;
+}
+
+.line input[type=color] {
+  padding: 0;
+  height: 26px;
+}
+
+h4 {
+  margin: 10px 0 6px 0;
+  font-weight: normal;
+  border-bottom: 1px solid #aaa;
+}
+
+.shape {
+  width: 100%;
+  height: 100%;
+}
+
+.draw, .draw .item {
+  cursor: crosshair;
+}
+
+.ic {
+  flex: none;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  background-image: url('./icons/256xiconsP2.png');
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.ic:hover {
+  filter: brightness(1.15);
+}
+
+.ic.on {
+  outline: 2px solid #fff;
+}
+
+.ic:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.guide {
+  position: absolute;
+  background: #f0f;
+  pointer-events: none;
+}
+
+.tb {
+  text-transform: capitalize;
+  font: inherit;
+  border: 1px solid #000;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1px 8px;
+  cursor: pointer;
+}
+
+.tb:hover {
+  background: #fff;
+}
+
+.tb:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.fx {
+  width: 100%;
+  height: 100%;
+  transform-origin: var(--o, 50% 50%);
+}
+
+.fx.on {
+  animation: var(--a) var(--d) var(--e) 1 both;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.card {
+  border: 1px solid #000;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  user-select: none;
+}
+
+.card.on {
+  outline: 2px solid #fff;
+  background: #fff;
+}
+
+.cn {
+  padding: 2px 4px;
+  font-size: 14px;
+}
+
+.pv {
+  position: relative;
+  height: 48px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.free {
+  display: flex;
+  gap: 8px;
+}
+
+.free .pv {
+  flex: none;
+  width: 88px;
+}
+
+.fm {
+  flex: 1;
+  padding: 4px 4px 0 0;
+}
+
+.line span {
+  min-width: 30px;
+}
+
+.kf {
+  margin-top: 8px;
+}
+
+.track {
+  position: relative;
+  height: 30px;
+  margin: 0 8px 8px 8px;
+  border: 1px solid #000;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.mk {
+  position: absolute;
+  top: 7px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #000;
+  background: #fff;
+  transform: rotate(45deg);
+  cursor: grab;
+}
+
+.mk.on {
+  background: #f90;
+}
+
+.ph {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #f00;
+  pointer-events: none;
+}
+
+.stk {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.draft {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.box.multi {
+  border: 1px dashed #000;
+}
+
+.gbox {
+  position: absolute;
+  border: 1px dashed #000;
+  pointer-events: none;
+}
+
+.marq {
+  position: absolute;
+  border: 1px dashed #000;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.menu {
+  position: fixed;
+  z-index: 50;
+  width: 130px;
+  gap: 6px;
+  padding: 6px;
+}
+
+.grp {
+  position: absolute;
+  pointer-events: none;
+}
+
+.grp .item {
+  pointer-events: auto;
+}
+
+.gin {
+  position: absolute;
+}
+
+.ps {
+  position: absolute;
+}
+
+.pk {
+  transform-origin: 0 0;
+}
+
+.pa {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.pt {
+  position: absolute;
+}
+
+.pf {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ptx {
+  white-space: pre-wrap;
+  overflow: hidden;
+}
