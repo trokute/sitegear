@@ -27,13 +27,6 @@ function _every(t, f) {
   })
 }
 
-function _forever(f) {
-  requestAnimationFrame(function t() {
-    f()
-    requestAnimationFrame(t)
-  })
-}
-
 function _q(n) {
   return Array.prototype.slice.call(document.querySelectorAll('[data-c="' + n + '"]'))
 }
@@ -268,14 +261,21 @@ function _move(o, x, y) {
 }
 
 function _glide(o, x, y, t) {
-  _e(o, function (e) {
-    e.style.transition = 'left ' + t + 's linear,top ' + t + 's linear'
-    e.style.left = _px(x)
-    e.style.top = _px(y)
-    setTimeout(function () {
-      e.style.transition = ''
-      _trace(e)
-    }, t * 1000)
+  var els = _L(o)
+  var s = els.map(function (e) {
+    return [parseFloat(e.style.left), parseFloat(e.style.top)]
+  })
+  var t0 = performance.now()
+  return new Promise(function (res) {
+    var step = function (now) {
+      var k = t > 0 ? Math.min(1, (now - t0) / (t * 1000)) : 1
+      els.forEach(function (e, i) {
+        _move([e], s[i][0] + (x - s[i][0]) * k, s[i][1] + (y - s[i][1]) * k)
+      })
+      if (k < 1) requestAnimationFrame(step)
+      else res()
+    }
+    step(t0)
   })
 }
 
@@ -301,6 +301,7 @@ function _anim(o, n, t) {
     void x.offsetWidth
     x.style.animation = 'k-' + n + ' ' + t + 's ease-in-out 1 both'
   })
+  return _sleep(t)
 }
 
 function _hit(a, b) {
@@ -370,10 +371,11 @@ function _goto(o, t) {
 }
 
 function _glideto(o, s, t) {
-  _e(o, function (e) {
+  return Promise.all(_L(o).map(function (e) {
     var g = _where(t)
-    if (g) _glide([e], g.x - parseFloat(e.style.width) / 2, g.y - parseFloat(e.style.height) / 2, s)
-  })
+    if (!g) return 0
+    return _glide([e], g.x - parseFloat(e.style.width) / 2, g.y - parseFloat(e.style.height) / 2, s)
+  }))
 }
 
 function _steps(o, n) {
@@ -466,30 +468,18 @@ function _loud() {
   return _ml.v
 }
 
-function _repeat(n, f, d) {
-  var i = 0
-  requestAnimationFrame(function t() {
-    if (i++ >= n) return d()
-    f()
-    requestAnimationFrame(t)
+function _frame() {
+  return new Promise(function (r) {
+    requestAnimationFrame(function () {
+      r()
+    })
   })
 }
 
-function _loop(k, f, d) {
-  requestAnimationFrame(function t() {
-    if (k()) return d()
-    f()
-    requestAnimationFrame(t)
+function _sleep(s) {
+  return new Promise(function (r) {
+    setTimeout(r, (Number(s) || 0) * 1000)
   })
-}
-
-function _wait(k, d) {
-  var i = setInterval(function () {
-    if (k()) {
-      clearInterval(i)
-      d()
-    }
-  }, 16)
 }
 
 function _lim(v, a, b) {
@@ -517,34 +507,37 @@ function _route(a) {
   } catch (e) {}
 }
 
-function _play(u, cb) {
-  var a = new Audio()
-  if (_fx.pan) a.crossOrigin = 'anonymous'
-  a.src = u
-  _tune(a)
-  if (_fx.pan) _route(a)
-  _pl.push(a)
-  var end = function () {
-    var i = _pl.indexOf(a)
-    if (i < 0) return
-    _pl.splice(i, 1)
-    if (cb) cb()
-  }
-  a.onended = end
-  a.onerror = end
-  var r = a.play()
-  if (r && r.catch) r.catch(end)
+function _play(u) {
+  return new Promise(function (res) {
+    var a = new Audio()
+    if (_fx.pan) a.crossOrigin = 'anonymous'
+    a.src = u
+    _tune(a)
+    if (_fx.pan) _route(a)
+    a._r = res
+    _pl.push(a)
+    var end = function () {
+      var i = _pl.indexOf(a)
+      if (i < 0) return
+      _pl.splice(i, 1)
+      res()
+    }
+    a.onended = end
+    a.onerror = end
+    var p = a.play()
+    if (p && p.catch) p.catch(end)
+  })
 }
 
-function _snd(n, cb) {
-  if (!_S[n]) return cb && cb()
-  _play(_S[n], cb)
+function _snd(n) {
+  return _S[n] ? _play(_S[n]) : Promise.resolve()
 }
 
 function _stopall() {
   _pl.splice(0).forEach(function (a) {
     a.onended = a.onerror = null
     a.pause()
+    a._r()
   })
 }
 

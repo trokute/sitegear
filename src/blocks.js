@@ -191,26 +191,28 @@ const body = b => gen.statementToCode(b, 'DO')
 const js = JSON.stringify
 const f = gen.forBlock
 const fld = (b, n) => js(b.getFieldValue(n))
-const tail = new Set(['sg_playwait', 'sg_waituntil', 'sg_repeat', 'sg_repuntil', 'sg_wait'])
+const def = f.procedures_defreturn
+const call = f.procedures_callreturn
 
-const scrub = gen.scrub_
-gen.scrub_ = function (b, code, only) {
-  return scrub.call(this, b, code, only || tail.has(b.type))
+f.procedures_defreturn = (b, g) => {
+  const r = def(b, g)
+  const k = '%' + g.getProcedureName(b.getFieldValue('NAME'))
+  g.definitions_[k] = g.definitions_[k].replace(/^function /m, 'async function ')
+  return r
 }
-
-const rest = b => {
-  const nx = b.getNextBlock()
-  return gen.prefixLines(nx ? gen.blockToCode(nx) : '', gen.INDENT)
-}
+f.procedures_defnoreturn = f.procedures_defreturn
+f.procedures_callreturn = (b, g) => ['await ' + call(b, g)[0], Order.AWAIT]
+f.procedures_callnoreturn = (b, g) => 'await ' + call(b, g)[0] + ';\n'
 
 const cond = b => gen.valueToCode(b, 'COND', Order.NONE) || 'false'
-const on = (t, b) => '_on(' + js(t) + ', function () {\n' + body(b) + '});\n'
+const on = (t, b) => '_on(' + js(t) + ', async function () {\n' + body(b) + '});\n'
+const frame = gen.INDENT + 'await _frame();\n'
 
 f.sg_site = b => on('site', b)
 f.sg_page = b => on('page:' + b.getFieldValue('N'), b)
 f.sg_key = b => on(b.getFieldValue('ACT') + ':' + b.getFieldValue('KEY'), b)
 f.sg_msg = b => on('msg:' + b.getFieldValue('M'), b)
-f.sg_every = b => '_every(' + b.getFieldValue('T') + ', function () {\n' + body(b) + '});\n'
+f.sg_every = b => '_every(' + b.getFieldValue('T') + ', async function () {\n' + body(b) + '});\n'
 f.sg_touch = b => {
   const t = b.getInputTargetBlock('OBJ')
   return t && t.type === 'sg_obj' ? on(b.getFieldValue('EV') + ':' + t.getFieldValue('C'), b) : ''
@@ -219,8 +221,8 @@ f.sg_steps = b => '_steps(' + obj(b) + ', ' + val(b, 'V') + ');\n'
 f.sg_turn = b => '_chg(' + obj(b) + ', "angle", ' + b.getFieldValue('D') + ' * (' + val(b, 'V') + '));\n'
 f.sg_goto_to = b => '_goto(' + obj(b) + ', ' + fld(b, 'TO') + ');\n'
 f.sg_moveto = b => '_move(' + obj(b) + ', ' + val(b, 'X') + ', ' + val(b, 'Y') + ');\n'
-f.sg_glideto = b => '_glideto(' + obj(b) + ', ' + val(b, 'T') + ', ' + fld(b, 'TO') + ');\n'
-f.sg_glide = b => '_glide(' + obj(b) + ', ' + val(b, 'X') + ', ' + val(b, 'Y') + ', ' + val(b, 'T') + ');\n'
+f.sg_glideto = b => 'await _glideto(' + obj(b) + ', ' + val(b, 'T') + ', ' + fld(b, 'TO') + ');\n'
+f.sg_glide = b => 'await _glide(' + obj(b) + ', ' + val(b, 'X') + ', ' + val(b, 'Y') + ', ' + val(b, 'T') + ');\n'
 f.sg_dir = b => '_set(' + obj(b) + ', "angle", ' + val(b, 'V') + ');\n'
 f.sg_towards = b => '_towards(' + obj(b) + ', ' + fld(b, 'TO') + ');\n'
 f.sg_set = b => '_set(' + obj(b) + ', ' + fld(b, 'P') + ', ' + val(b, 'V') + ');\n'
@@ -229,8 +231,8 @@ f.sg_bounce = b => '_bounce(' + obj(b) + ');\n'
 f.sg_show = b => '_vis(' + obj(b) + ', ' + b.getFieldValue('V') + ');\n'
 f.sg_color = b => '_color(' + obj(b) + ', ' + fld(b, 'V') + ');\n'
 f.sg_text = b => '_set(' + obj(b) + ', "text", ' + val(b, 'V') + ');\n'
-f.sg_anim = b => '_anim(' + obj(b) + ', ' + fld(b, 'A') + ', ' + val(b, 'T') + ');\n'
-f.sg_playwait = b => '_snd(' + fld(b, 'SND') + ', function () {\n' + rest(b) + '});\n'
+f.sg_anim = b => 'await _anim(' + obj(b) + ', ' + fld(b, 'A') + ', ' + val(b, 'T') + ');\n'
+f.sg_playwait = b => 'await _snd(' + fld(b, 'SND') + ');\n'
 f.sg_play = b => '_snd(' + fld(b, 'SND') + ');\n'
 f.sg_playurl = b => '_play(' + vs(b, 'V') + ');\n'
 f.sg_stopall = () => '_stopall();\n'
@@ -261,12 +263,16 @@ f.sg_layers = () => ['_count()', Order.FUNCTION_CALL]
 f.sg_at = b => ['_at(' + val(b, 'N') + ')', Order.FUNCTION_CALL]
 f.sg_class = b => ['_cname(' + obj(b) + ')', Order.FUNCTION_CALL]
 
-f.sg_wait = b => 'setTimeout(function () {\n' + rest(b) + '}, (' + val(b, 'T') + ') * 1000);\n'
-f.sg_repeat = b => '_repeat(' + val(b, 'N') + ', function () {\n' + body(b) + '}, function () {\n' + rest(b) + '});\n'
-f.sg_repuntil = b => '_loop(function () {\n  return ' + cond(b) + ';\n}, function () {\n' + body(b) + '}, function () {\n' + rest(b) + '});\n'
-f.sg_waituntil = b => '_wait(function () {\n  return ' + cond(b) + ';\n}, function () {\n' + rest(b) + '});\n'
-f.sg_forever = b => '_forever(function () {\n' + body(b) + '});\n'
-f.sg_after = b => 'setTimeout(function () {\n' + body(b) + '}, (' + val(b, 'T') + ') * 1000);\n'
+f.sg_wait = b => 'await _sleep(' + val(b, 'T') + ');\n'
+f.sg_repeat = b => {
+  const e = gen.nameDB_.getDistinctName('repeat_end', Blockly.Names.NameType.VARIABLE)
+  const k = gen.nameDB_.getDistinctName('count', Blockly.Names.NameType.VARIABLE)
+  return 'var ' + e + ' = ' + val(b, 'N') + ';\nfor (var ' + k + ' = 0; ' + k + ' < ' + e + '; ' + k + '++) {\n' + body(b) + frame + '}\n'
+}
+f.sg_repuntil = b => 'while (!(' + cond(b) + ')) {\n' + body(b) + frame + '}\n'
+f.sg_waituntil = b => 'while (!(' + cond(b) + ')) {\n' + frame + '}\n'
+f.sg_forever = b => 'while (true) {\n' + body(b) + frame + '}\n'
+f.sg_after = b => 'setTimeout(async function () {\n' + body(b) + '}, (' + val(b, 'T') + ') * 1000);\n'
 f.sg_send = b => '_fire(' + js('msg:' + b.getFieldValue('M')) + ');\n'
 f.sg_goto = b => '_go(' + val(b, 'P') + ');\n'
 f.sg_nav = b => '_nav(' + b.getFieldValue('D') + ');\n'
