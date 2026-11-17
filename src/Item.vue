@@ -82,7 +82,7 @@ function track(e, fn, end) {
 function ctx(e) {
   if (state.tool !== 'select') return
   if (!selIds().includes(props.item.id)) select(props.item.id)
-  state.menu = { x: Math.min(e.clientX, window.innerWidth - 150), y: Math.min(e.clientY, window.innerHeight - 110) }
+  state.menu = { x: Math.min(e.clientX, window.innerWidth - 150), y: Math.min(e.clientY, window.innerHeight - 140) }
 }
 
 function drag(e) {

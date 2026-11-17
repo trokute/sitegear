@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
-import { state, remove, addShape, addImage, addStroke, undo, redo, selIds, clearSel, pick, group, ungroup } from './store'
+import { computed, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
+import { state, remove, addShape, addImage, addStroke, undo, redo, selIds, clearSel, pick, group, ungroup, animTarget } from './store'
 import { strokePath, bounds } from './geom'
 import Item from './Item.vue'
 import Group from './Group.vue'
@@ -9,6 +9,9 @@ import Layers from './Layers.vue'
 import Document from './Document.vue'
 import Animation from './Animation.vue'
 import { stopRec } from './anim'
+import { addFiles } from './sounds'
+
+const Scripting = defineAsyncComponent(() => import('./Scripting.vue'))
 
 const z = computed(() => state.zoom)
 const rows = computed(() => {
@@ -23,6 +26,7 @@ const rows = computed(() => {
   })
   return r
 })
+const tg = computed(animTarget)
 const dp = computed(() => state.draft ? strokePath(state.draft.pts) : '')
 const can = computed(() => state.items.some(i => selIds().includes(i.id) && i.gid))
 const gb = computed(() => {
@@ -43,7 +47,7 @@ function key(e) {
     stopRec()
     return
   }
-  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.closest('.script')) return
   const k = e.key.toLowerCase()
   if (e.ctrlKey || e.metaKey) {
     if (k === 'z') {
@@ -121,6 +125,12 @@ function shut(e) {
   if (state.menu && !e.target.closest('.menu')) state.menu = null
 }
 
+function setCls(e) {
+  const v = e.target.value.replace(/[^\w-]/g, '')
+  e.target.value = v
+  tg.value.cls = v
+}
+
 function doGroup() {
   group()
   state.menu = null
@@ -170,6 +180,10 @@ function drop(e) {
   let x = (e.clientX - b.left) / z.value
   let y = (e.clientY - b.top) / z.value
   for (const f of e.dataTransfer.files) {
+    if (f.type.startsWith('audio/')) {
+      addFiles([f], false)
+      continue
+    }
     if (!f.type.startsWith('image/')) continue
     const px = x
     const py = y
@@ -215,7 +229,9 @@ onUnmounted(() => {
   <div v-if="state.menu" class="panel menu" :style="{ left: state.menu.x + 'px', top: state.menu.y + 'px' }" @contextmenu.prevent>
     <button class="tb" :disabled="selIds().length < 2" @click="doGroup">Group</button>
     <button class="tb" :disabled="!can" @click="doUngroup">Ungroup</button>
+    <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Class name" @input="setCls" @keydown.enter="state.menu = null">
   </div>
   <Document />
   <Layers />
+  <Scripting v-if="state.coding" />
 </template>

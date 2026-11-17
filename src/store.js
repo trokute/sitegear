@@ -35,6 +35,10 @@ export const state = reactive({
   play: null,
   rec: null,
   kf: null,
+  coding: false,
+  script: null,
+  sounds: [],
+  audio: { bg: '', vol: 100 },
   get items() {
     return this.pages[this.page].items
   },
@@ -108,7 +112,7 @@ export function gitem(gid, pg) {
   for (const k of ['x', 'y', 'w', 'h', 'r']) {
     Object.defineProperty(o, k, { get: () => Math.round(a.box[k] * 10) / 10, set: v => setFrame(gid, { [k]: v }) })
   }
-  for (const k of ['free', 'keys']) {
+  for (const k of ['free', 'keys', 'cls']) {
     Object.defineProperty(o, k, { get: () => a[k], set: v => { a[k] = v } })
   }
   Object.defineProperty(o, 'opacity', { get: () => a.op ?? 100, set: v => { a.op = v } })
@@ -335,6 +339,10 @@ export function load(d) {
   state.pages = pages
   state.page = 0
   state.backdrop = d.backdrop || '#ffffff'
+  state.coding = false
+  state.script = d.script || null
+  state.sounds = d.sounds || []
+  state.audio = d.audio || { bg: '', vol: 100 }
   state.fonts = d.fonts && d.fonts.length ? d.fonts : [defaultFont]
   clearSel()
   state.tool = 'select'
