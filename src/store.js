@@ -236,6 +236,59 @@ export function remove() {
   clearSel()
 }
 
+let clip = null
+
+function pack() {
+  const ids = selIds()
+  const items = state.items.filter(i => ids.includes(i.id))
+  if (!items.length) return null
+  const groups = {}
+  items.forEach(i => {
+    if (i.gid) groups[i.gid] = state.pages[state.page].groups[i.gid]
+  })
+  return JSON.parse(JSON.stringify({ items, groups }))
+}
+
+function place(c) {
+  if (!c) return
+  c.items.forEach(i => {
+    i.x += 20
+    i.y += 20
+  })
+  Object.values(c.groups).forEach(g => {
+    g.box.x += 20
+    g.box.y += 20
+  })
+  const d = JSON.parse(JSON.stringify(c))
+  const map = {}
+  Object.keys(d.groups).forEach(k => {
+    map[k] = ++gn
+    state.pages[state.page].groups[gn] = d.groups[k]
+  })
+  const items = d.items.map(i => reactive({ ...i, id: ++n, gid: i.gid ? map[i.gid] : 0 }))
+  state.items.push(...items)
+  pick(items.map(i => i.id))
+}
+
+export function copy() {
+  clip = pack() || clip
+}
+
+export function cut() {
+  const c = pack()
+  if (!c) return
+  clip = c
+  remove()
+}
+
+export function paste() {
+  place(clip)
+}
+
+export function duplicate() {
+  place(pack())
+}
+
 export function align(k) {
   const it = selected()
   if (!it) return
@@ -295,7 +348,7 @@ export function copyPage(i) {
   state.sel = null
 }
 
-function loadFont(f) {
+export function loadFont(f) {
   if (document.querySelector('link[href="' + f.link + '"]')) return
   const el = document.createElement('link')
   el.rel = 'stylesheet'

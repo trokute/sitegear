@@ -1,6 +1,6 @@
 <script setup>
 import { computed, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
-import { state, remove, addShape, addImage, addStroke, undo, redo, selIds, clearSel, pick, group, ungroup, animTarget } from './store'
+import { state, remove, addShape, addImage, addStroke, undo, redo, selIds, clearSel, pick, group, ungroup, animTarget, copy, cut, paste, duplicate } from './store'
 import { strokePath, bounds } from './geom'
 import Item from './Item.vue'
 import Group from './Group.vue'
@@ -8,6 +8,7 @@ import Toolbar from './Toolbar.vue'
 import Layers from './Layers.vue'
 import Document from './Document.vue'
 import Animation from './Animation.vue'
+import Notice from './Notice.vue'
 import { stopRec } from './anim'
 import { addFiles } from './sounds'
 
@@ -47,8 +48,9 @@ function key(e) {
     stopRec()
     return
   }
-  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.closest('.script')) return
   const k = e.key.toLowerCase()
+  if ((e.ctrlKey || e.metaKey) && k === 'd') e.preventDefault()
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.closest('.script')) return
   if (e.ctrlKey || e.metaKey) {
     if (k === 'z') {
       e.preventDefault()
@@ -57,6 +59,14 @@ function key(e) {
     } else if (k === 'y') {
       e.preventDefault()
       redo()
+    } else if (k === 'c') {
+      copy()
+    } else if (k === 'x') {
+      cut()
+    } else if (k === 'v') {
+      paste()
+    } else if (k === 'd') {
+      duplicate()
     }
     return
   }
@@ -234,4 +244,5 @@ onUnmounted(() => {
   <Document />
   <Layers />
   <Scripting v-if="state.coding" />
+  <Notice />
 </template>

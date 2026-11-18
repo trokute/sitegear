@@ -13,6 +13,14 @@ export const googleFonts = [
 
 export const googleSet = new Set(googleFonts)
 
+const fam = name => 'family=' + name.replace(/ /g, '+')
+
 export function googleUrl(name) {
-  return 'https://fonts.googleapis.com/css2?family=' + name.replace(/ /g, '+') + '&display=swap'
+  return 'https://fonts.googleapis.com/css2?' + fam(name) + '&display=swap'
+}
+
+export const googleAll = 'https://fonts.googleapis.com/css2?' + googleFonts.map(fam).join('&') + '&display=swap'
+
+export function family(name) {
+  return "'" + name + "', sans-serif"
 }

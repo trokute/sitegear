@@ -152,6 +152,14 @@ html, body {
   width: 270px;
 }
 
+.notice {
+  top: 40px;
+  left: 340px;
+  bottom: auto;
+  width: 360px;
+  z-index: 60;
+}
+
 .layers {
   right: 0;
   width: 170px;

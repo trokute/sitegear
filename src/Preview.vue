@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { state } from './store'
 import { bounds, strokePath } from './geom'
+import { family } from './fonts'
 
 const props = defineProps({ it: Object, anim: String, origin: String })
 
@@ -45,7 +46,7 @@ function pos(i) {
 function text(i) {
   return {
     color: i.color,
-    fontFamily: "'" + i.font + "', sans-serif",
+    fontFamily: family(i.font),
     fontSize: i.size + 'px',
     lineHeight: i.lh
   }

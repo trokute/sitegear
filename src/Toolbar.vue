@@ -1,9 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { state, selected, animTarget, selIds, addText, addImage, addFont, remove, undo, redo } from './store'
+import { state, selected, animTarget, selIds, addText, addImage, addFont, loadFont, remove, undo, redo } from './store'
 import { preview, download } from './export'
 import { ic } from './icon'
-import { googleFonts } from './fonts'
+import { googleFonts, googleAll, family } from './fonts'
 import { save, open as openFile } from './project'
 
 const open = ref(true)
@@ -24,6 +24,10 @@ function img() {
 function font() {
   addFont(fontLink.value)
   fontLink.value = ''
+}
+
+function fonts() {
+  loadFont({ link: googleAll })
 }
 
 function pick(e) {
@@ -119,15 +123,15 @@ function tool(t) {
         <template v-if="it.type === 'text'">
           <div class="line">
             <label>Font</label>
-            <select v-model="it.font">
-              <option v-for="f in state.fonts" :key="f.name" :value="f.name">{{ f.name }}</option>
+            <select v-model="it.font" @focus="fonts">
+              <option v-for="f in state.fonts" :key="f.name" :value="f.name" :style="{ fontFamily: family(f.name) }">{{ f.name }}</option>
               <optgroup label="Google Fonts">
-                <option v-for="g in googleFonts" :key="g" :value="g">{{ g }}</option>
+                <option v-for="g in googleFonts" :key="g" :value="g" :style="{ fontFamily: family(g) }">{{ g }}</option>
               </optgroup>
               <optgroup label="System">
-                <option>sans-serif</option>
-                <option>serif</option>
-                <option>monospace</option>
+                <option style="font-family: sans-serif">sans-serif</option>
+                <option style="font-family: serif">serif</option>
+                <option style="font-family: monospace">monospace</option>
               </optgroup>
             </select>
           </div>

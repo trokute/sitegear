@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { state, select, selIds } from './store'
 import { snapMove, strokePath } from './geom'
 import { animVars } from './anim'
+import { family } from './fonts'
 
 const props = defineProps({ item: Object })
 
@@ -51,7 +52,7 @@ const style = computed(() => ({
 const tstyle = computed(() => ({
   ...cst.value,
   color: props.item.color,
-  fontFamily: "'" + props.item.font + "', sans-serif",
+  fontFamily: family(props.item.font),
   fontSize: props.item.size + 'px',
   lineHeight: props.item.lh
 }))
