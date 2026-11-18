@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
-import { state, select, selIds } from './store'
+import { state, select, selIds, fail } from './store'
 import { snapMove, strokePath } from './geom'
 import { animVars } from './anim'
 import { family } from './fonts'
@@ -179,7 +179,7 @@ function rotate(e) {
 <template>
   <div class="item" :style="style" @pointerdown.stop="drag" @contextmenu.prevent.stop="ctx">
     <div ref="fx" class="fx" :style="fxs" @animationend="done">
-      <img v-if="item.type === 'image'" :src="item.src" :style="cst" draggable="false">
+      <img v-if="item.type === 'image'" :src="item.src" :style="cst" draggable="false" @error="fail('Image failed to load')">
       <svg v-else-if="item.type === 'stroke'" class="stk" :viewBox="'0 0 ' + item.ow + ' ' + item.oh" preserveAspectRatio="none" :style="cst">
         <path :d="sp" fill="none" :stroke="item.color" :stroke-width="item.sw" stroke-linecap="round" stroke-linejoin="round" />
       </svg>

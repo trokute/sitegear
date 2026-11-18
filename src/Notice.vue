@@ -6,9 +6,9 @@ import readme from '../README.md?raw'
 const open = ref(localStorage.getItem('readme') !== readme)
 
 const lines = computed(() => readme.split('\n').filter(l => l.trim()).map(l => {
-  const m = l.match(/^(#+|-)\s+(.*)$/)
+  const m = l.match(/^(#+|-|\*)\s+(.*)$/)
   if (!m) return { t: 'p', s: l }
-  return m[1] === '-' ? { t: 'li', s: m[2] } : { t: 'h4', s: m[2] }
+  return m[1][0] === '#' ? { t: 'h4', s: m[2] } : { t: 'li', s: m[2] }
 }))
 
 function close() {

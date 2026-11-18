@@ -39,6 +39,7 @@ export const state = reactive({
   script: null,
   sounds: [],
   audio: { bg: '', vol: 100 },
+  error: '',
   get items() {
     return this.pages[this.page].items
   },
@@ -67,6 +68,36 @@ export const state = reactive({
     return Math.max(0.1, Math.min(1, (vw.value - 80) / this.width))
   }
 })
+
+let failTimer = 0
+
+export function fail(msg) {
+  state.error = msg
+  clearTimeout(failTimer)
+  failTimer = setTimeout(() => {
+    state.error = ''
+  }, 4000)
+}
+
+export const renames = []
+
+export function taken(cls, it) {
+  const me = it.grp ? it.anim : it
+  return state.pages.some(p => p.items.some(i => i !== me && i.cls === cls) || Object.values(p.groups).some(g => g !== me && g.cls === cls))
+}
+
+function swap(o, from, to) {
+  if (!o || typeof o !== 'object') return
+  if (o.fields) {
+    for (const k of ['C', 'TO']) if (o.fields[k] === from) o.fields[k] = to
+  }
+  Object.values(o).forEach(v => swap(v, from, to))
+}
+
+export function renameClass(from, to) {
+  swap(state.script, from, to)
+  renames.forEach(f => f(from, to))
+}
 
 export function selected() {
   return state.items.find(i => i.id === state.sel)
@@ -260,6 +291,8 @@ function place(c) {
     g.box.y += 20
   })
   const d = JSON.parse(JSON.stringify(c))
+  d.items.forEach(i => delete i.cls)
+  Object.values(d.groups).forEach(g => delete g.cls)
   const map = {}
   Object.keys(d.groups).forEach(k => {
     map[k] = ++gn
@@ -353,17 +386,23 @@ export function loadFont(f) {
   const el = document.createElement('link')
   el.rel = 'stylesheet'
   el.href = f.link
+  el.onerror = () => fail('Font failed to load' + (f.name ? ': ' + f.name : ''))
   document.head.appendChild(el)
 }
 
 export function addFont(input) {
   const url = ((input || '').match(/https?:\/\/[^"'\s<>)]+/) || [])[0]
-  if (!url) return
-  const clean = url.replace(/&amp;/g, '&')
-  const m = clean.match(/family=([^:&]+)/)
-  if (!m) return
+  const clean = url && url.replace(/&amp;/g, '&')
+  const m = clean && clean.match(/family=([^:&]+)/)
+  if (!m) {
+    fail('Invalid font link')
+    return
+  }
   const name = decodeURIComponent(m[1].replace(/\+/g, ' '))
-  if (state.fonts.find(f => f.name === name)) return
+  if (state.fonts.find(f => f.name === name)) {
+    fail('Font already added')
+    return
+  }
   const f = { name, link: clean }
   state.fonts.push(f)
   loadFont(f)
@@ -410,7 +449,7 @@ const loaded = new Set()
 function ensureFont(name) {
   if (loaded.has(name) || state.fonts.find(f => f.name === name) || !googleSet.has(name)) return
   loaded.add(name)
-  loadFont({ link: googleUrl(name) })
+  loadFont({ name, link: googleUrl(name) })
 }
 
 watch(() => state.pages.flatMap(p => p.items.filter(i => i.type === 'text').map(i => i.font)), names => names.forEach(ensureFont), { immediate: true })

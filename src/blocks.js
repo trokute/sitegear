@@ -26,6 +26,10 @@ export function names() {
   return [...s]
 }
 
+export function forget(name) {
+  extra.delete(name)
+}
+
 function sounds() {
   return [...new Set([...state.sounds.map(s => s.name), ...extraSnd])]
 }
@@ -173,16 +177,13 @@ const defs = [
   { type: 'sg_contains', message0: '%1 contains %2 ?', args0: [any('A'), any('B')], output: 'Boolean', colour: C.op, inputsInline: true }
 ]
 
-const objTypes = new Set(defs.filter(d => (d.args0 || []).some(a => a.name === 'OBJ')).map(d => d.type))
+const objIn = Object.fromEntries(defs.map(d => [d.type, (d.args0 || []).filter(a => a.check === 'Obj').map(a => a.name)]).filter(e => e[1].length))
 
 Blockly.common.defineBlocksWithJsonArray(defs)
 
 Blockly.Blocks.sg_obj = {
   init() {
-    this.appendDummyInput().appendField(new Blockly.FieldDropdown(() => {
-      const l = names()
-      return l.length ? l.map(n => [n, n]) : [['none', '']]
-    }), 'C')
+    this.appendDummyInput().appendField(new Blockly.FieldDropdown(() => [['none', '']].concat(names().map(n => [n, n]))), 'C')
     this.setOutput(true, 'Obj')
     this.setColour(C.ob)
   }
@@ -303,8 +304,10 @@ const sh = (type, fields) => ({ shadow: { type, fields } })
 const n = v => sh('math_number', { NUM: v })
 const t = v => sh('text', { TEXT: v })
 const bk = (type, inputs, fields, extraState) => {
-  const fill = ctx && objTypes.has(type) && !(inputs && inputs.OBJ)
-  const i = fill ? { ...inputs, OBJ: { block: { type: 'sg_obj', fields: { C: ctx } } } } : inputs
+  const i = { ...inputs }
+  ;(objIn[type] || []).forEach(k => {
+    if (!i[k]) i[k] = { block: { type: 'sg_obj', fields: { C: k === 'OBJ' ? ctx : '' } } }
+  })
   return { kind: 'block', type, inputs: i, fields, extraState }
 }
 const cat = (name, colour, contents) => ({ kind: 'category', name, colour, contents })

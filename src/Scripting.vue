@@ -1,9 +1,9 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as Blockly from 'blockly'
-import { state, animTarget } from './store'
+import { state, animTarget, renames } from './store'
 import { ic } from './icon'
-import { toolbox, theme, setup, scan } from './blocks'
+import { toolbox, theme, setup, scan, forget } from './blocks'
 import { addFiles } from './sounds'
 
 const root = ref(null)
@@ -16,6 +16,17 @@ const refs = { pos, ap }
 let ws = null
 let ro = null
 let stop = null
+
+function rename(from, to) {
+  ws.getAllBlocks(false).forEach(b => {
+    for (const k of ['C', 'TO']) {
+      if (b.getFieldValue(k) !== from) continue
+      b.getField(k).getOptions(false)
+      b.setFieldValue(to, k)
+    }
+  })
+  forget(from)
+}
 
 watch(ask, (v, o) => {
   if (v && !o) ap.value = { x: (win.value.clientWidth - 280) / 2, y: (win.value.clientHeight - 140) / 2 }
@@ -78,11 +89,13 @@ onMounted(() => {
     state.script = Blockly.serialization.workspaces.save(ws)
   })
   stop = watch(ctx, c => ws.updateToolbox(toolbox(c)))
+  renames.push(rename)
   ro = new ResizeObserver(() => Blockly.svgResize(ws))
   ro.observe(win.value)
 })
 
 onUnmounted(() => {
+  renames.splice(renames.indexOf(rename), 1)
   stop()
   ro.disconnect()
   ws.dispose()

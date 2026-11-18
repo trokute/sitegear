@@ -160,6 +160,16 @@ html, body {
   z-index: 60;
 }
 
+.fail {
+  top: 0;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 90vw;
+  z-index: 200;
+}
+
 .layers {
   right: 0;
   width: 170px;

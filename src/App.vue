@@ -1,6 +1,6 @@
 <script setup>
 import { computed, defineAsyncComponent, onMounted, onUnmounted } from 'vue'
-import { state, remove, addShape, addImage, addStroke, undo, redo, selIds, clearSel, pick, group, ungroup, animTarget, copy, cut, paste, duplicate } from './store'
+import { state, remove, addShape, addImage, addStroke, undo, redo, selIds, clearSel, pick, group, ungroup, animTarget, copy, cut, paste, duplicate, taken, renameClass, fail } from './store'
 import { strokePath, bounds } from './geom'
 import Item from './Item.vue'
 import Group from './Group.vue'
@@ -9,6 +9,7 @@ import Layers from './Layers.vue'
 import Document from './Document.vue'
 import Animation from './Animation.vue'
 import Notice from './Notice.vue'
+import ErrorBar from './ErrorBar.vue'
 import { stopRec } from './anim'
 import { addFiles } from './sounds'
 
@@ -135,10 +136,25 @@ function shut(e) {
   if (state.menu && !e.target.closest('.menu')) state.menu = null
 }
 
+let was = ''
+
+function focusCls() {
+  was = tg.value.cls || ''
+}
+
 function setCls(e) {
+  const t = tg.value
   const v = e.target.value.replace(/[^\w-]/g, '')
+  if (v && taken(v, t)) {
+    fail('Class name already used')
+    e.target.value = t.cls || ''
+    return
+  }
   e.target.value = v
-  tg.value.cls = v
+  t.cls = v
+  if (!v) return
+  if (was && was !== v && !taken(was, t)) renameClass(was, v)
+  was = v
 }
 
 function doGroup() {
@@ -239,10 +255,11 @@ onUnmounted(() => {
   <div v-if="state.menu" class="panel menu" :style="{ left: state.menu.x + 'px', top: state.menu.y + 'px' }" @contextmenu.prevent>
     <button class="tb" :disabled="selIds().length < 2" @click="doGroup">Group</button>
     <button class="tb" :disabled="!can" @click="doUngroup">Ungroup</button>
-    <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Class name" @input="setCls" @keydown.enter="state.menu = null">
+    <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Class name" @focus="focusCls" @input="setCls" @keydown.enter="state.menu = null">
   </div>
   <Document />
   <Layers />
   <Scripting v-if="state.coding" />
   <Notice />
+  <ErrorBar />
 </template>

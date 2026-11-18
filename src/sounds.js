@@ -1,4 +1,4 @@
-import { state } from './store'
+import { state, fail } from './store'
 
 let cur = null
 
@@ -40,5 +40,5 @@ export function preview(s) {
   if (cur) cur.pause()
   cur = new Audio(s.src)
   cur.volume = state.audio.vol / 100
-  cur.play().catch(() => {})
+  cur.play().catch(() => fail('Sound failed to play'))
 }
