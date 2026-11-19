@@ -161,6 +161,7 @@ const defs = [
   { type: 'sg_pen', message0: 'pen %1 %2', args0: [dd('ON', [['down', '1'], ['up', '0']]), o], colour: C.pe, ...act },
   { type: 'sg_pencol', message0: 'set pen color of %1 to %2', args0: [o, col('#000000')], colour: C.pe, ...act },
   { type: 'sg_pensize', message0: 'set pen size of %1 to %2', args0: [o, num('S')], colour: C.pe, ...act },
+  { type: 'sg_penlayer', message0: 'move pen layer %1 %2', args0: [dd('W', [['above', 'above'], ['below', 'below']]), o], colour: C.pe, ...act },
   { type: 'sg_clear', message0: 'clear pen', colour: C.pe, ...act },
   { type: 'sg_layer', message0: 'move layer of %1 to %2', args0: [o, dd('W', [['the front', 'front'], ['the back', 'back'], ['one up', 'up'], ['one down', 'down']])], colour: C.la, ...act },
   { type: 'sg_layers', message0: 'number of layers', output: 'Number', colour: C.la },
@@ -277,6 +278,7 @@ f.sg_del = b => '_del(' + obj(b) + ');\n'
 f.sg_pen = b => '_pen(' + obj(b) + ', ' + b.getFieldValue('ON') + ');\n'
 f.sg_pencol = b => '_pcol(' + obj(b) + ', ' + co(b) + ');\n'
 f.sg_pensize = b => '_psize(' + obj(b) + ', ' + val(b, 'S') + ');\n'
+f.sg_penlayer = b => '_penlayer(' + obj(b) + ', ' + fld(b, 'W') + ');\n'
 f.sg_clear = () => '_clear();\n'
 f.sg_layer = b => '_layer(' + obj(b) + ', ' + fld(b, 'W') + ');\n'
 f.sg_layers = () => ['_count()', Order.FUNCTION_CALL]
@@ -388,6 +390,7 @@ export const toolbox = c => {
         bk('sg_pen'),
         bk('sg_pencol'),
         bk('sg_pensize', { S: n(4) }),
+        bk('sg_penlayer'),
         bk('sg_clear')
       ]),
       cat('Layers', C.la, [

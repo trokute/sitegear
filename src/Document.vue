@@ -1,13 +1,14 @@
 <script setup>
 import { ref } from 'vue'
-import { state, selected, addPage, deletePage, go, copyPage, align } from './store'
-import { ic } from './icon'
-import { addLink, addFiles, removeSound, preview } from './sounds'
+import { state, selected, addPage, deletePage, go, copyPage, align, fail } from './store'
+import Icon from './Icon.vue'
+import { addSound, addFiles } from './sounds'
 
 const open = ref(true)
 const src = ref(0)
 const bgLink = ref('')
 const sndLink = ref('')
+let cur = null
 
 const sizes = [
   { name: 'Desktop', w: 1280, h: 900 },
@@ -16,6 +17,24 @@ const sizes = [
 ]
 
 const aligns = ['left', 'center', 'right', 'top', 'middle', 'bottom']
+
+function addLink(link, bg) {
+  const u = (link || '').trim()
+  if (!u) return
+  addSound(u.split(/[?#]/)[0].split('/').pop(), u, bg)
+}
+
+function removeSound(i) {
+  const [s] = state.sounds.splice(i, 1)
+  if (s && state.audio.bg === s.name) state.audio.bg = ''
+}
+
+function preview(s) {
+  if (cur) cur.pause()
+  cur = new Audio(s.src)
+  cur.volume = state.audio.vol / 100
+  cur.play().catch(() => fail('Sound failed to play'))
+}
 
 function addBg() {
   addLink(bgLink.value, true)
@@ -37,10 +56,10 @@ function size(s) {
   <div class="panel fixed doc">
     <div class="head" @click="open = !open">
       <span>Document</span>
-      <button class="ic" title="New page" :style="ic(13, 28)" @click.stop="addPage"></button>
-      <button class="ic" title="Previous page" :style="ic(15, 28)" :disabled="state.page === 0" @click.stop="go(-1)"></button>
-      <button class="ic" title="Next page" :style="ic(14, 28)" :disabled="state.page === state.pages.length - 1" @click.stop="go(1)"></button>
-      <button class="ic push" title="Delete page" :style="ic(12, 28)" :disabled="state.pages.length < 2" @click.stop="deletePage"></button>
+      <Icon title="New page" :n="13" :s="28" @click.stop="addPage" />
+      <Icon title="Previous page" :n="15" :s="28" :disabled="state.page === 0" @click.stop="go(-1)" />
+      <Icon title="Next page" :n="14" :s="28" :disabled="state.page === state.pages.length - 1" @click.stop="go(1)" />
+      <Icon class="push" title="Delete page" :n="12" :s="28" :disabled="state.pages.length < 2" @click.stop="deletePage" />
     </div>
     <div v-if="open" class="body">
       <div class="line">
@@ -98,7 +117,7 @@ function size(s) {
       <div v-for="(s, i) in state.sounds" :key="s.name" class="line">
         <span class="lname">{{ s.name }}</span>
         <button class="tb" @click="preview(s)">Play</button>
-        <button class="ic" title="Delete sound" :style="ic(12, 28)" @click="removeSound(i)"></button>
+        <Icon title="Delete sound" :n="12" :s="28" @click="removeSound(i)" />
       </div>
       <h4>Copy from</h4>
       <div class="line">
@@ -107,7 +126,7 @@ function size(s) {
             <option v-if="i !== state.page" :value="i">Page {{ i + 1 }}</option>
           </template>
         </select>
-        <button class="ic" title="Duplicate page" :style="ic(16)" @click="copyPage(src)"></button>
+        <Icon title="Duplicate page" :n="16" @click="copyPage(src)" />
       </div>
       <h4>Align</h4>
       <div class="line">

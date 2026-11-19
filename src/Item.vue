@@ -195,7 +195,7 @@ function rotate(e) {
       </svg>
       <div v-else-if="item.type === 'text'" class="txt" :style="tstyle">{{ item.text }}</div>
       <div v-else-if="item.type === 'widget'" ref="wg" class="wgi" :style="cst"></div>
-      <component :is="item.kind === 'frame' ? 'iframe' : item.kind" v-else-if="item.type === 'media'" class="wgi" :src="item.src" :controls="item.kind !== 'frame'" allowfullscreen :style="cst" @error="fail('Media failed to load')" />
+      <component :is="item.kind === 'frame' ? 'iframe' : item.kind" v-else-if="item.type === 'media'" class="wgi" :src="item.src" :controls="item.kind !== 'frame'" :referrerpolicy="item.kind === 'frame' ? 'strict-origin-when-cross-origin' : null" allowfullscreen :style="cst" @error="fail('Media failed to load')" />
       <div v-else class="shape" :style="sstyle"></div>
     </div>
     <div v-if="multi" class="box multi"></div>

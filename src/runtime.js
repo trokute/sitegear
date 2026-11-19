@@ -146,6 +146,13 @@ function _psize(o, v) {
   })
 }
 
+function _penlayer(o, w) {
+  var p = _page()
+  var e = _L(o)[0]
+  while (e && e.parentNode !== p) e = e.parentNode
+  if (e) p.insertBefore(_cv(p), w === 'above' ? e.nextSibling : e)
+}
+
 function _clear() {
   var p = _page()
   var v = _cv(p)

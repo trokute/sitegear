@@ -1,10 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { state, selected, animTarget, selIds, addText, addImage, addFont, loadFont, remove, undo, redo } from './store'
+import { state, selected, animTarget, selIds, addText, addImage, addFont, loadFont, remove, undo, redo, load, fail } from './store'
 import { preview, download } from './export'
-import { ic } from './icon'
+import Icon from './Icon.vue'
 import { googleFonts, googleAll, family } from './fonts'
-import { save, open as openFile } from './project'
+import { closeKeys } from './anim'
 import { offer } from './media'
 
 const open = ref(true)
@@ -62,6 +62,27 @@ function fonts() {
   loadFont({ link: googleAll })
 }
 
+function save() {
+  try {
+    closeKeys()
+    const d = { pages: state.pages, backdrop: state.backdrop, fonts: state.fonts, script: state.script, sounds: state.sounds, audio: state.audio }
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' }))
+    a.download = 'project.json'
+    a.click()
+  } catch (e) {
+    fail('Failed to save project')
+  }
+}
+
+function openFile(file) {
+  file.text().then(t => {
+    const d = JSON.parse(t)
+    if (!Array.isArray(d.pages) && !Array.isArray(d.items)) throw new Error()
+    load(d)
+  }).catch(() => fail('Invalid project file'))
+}
+
 function pick(e) {
   const f = e.target.files[0]
   if (f) openFile(f)
@@ -77,28 +98,28 @@ function tool(t) {
   <div class="panel tools">
     <div class="head" @click="open = !open">
       <span>Tool Bar</span>
-      <button class="ic" title="Delete" :style="ic(12, 28)" :disabled="!selIds().length" @click.stop="remove"></button>
-      <button class="ic" title="Undo" :style="ic(18, 28)" @click.stop="undo"></button>
-      <button class="ic" title="Redo" :style="ic(19, 28)" @click.stop="redo"></button>
+      <Icon title="Delete" :n="12" :s="28" :disabled="!selIds().length" @click.stop="remove" />
+      <Icon title="Undo" :n="18" :s="28" @click.stop="undo" />
+      <Icon title="Redo" :n="19" :s="28" @click.stop="redo" />
     </div>
     <div v-if="open" class="body">
       <div class="line">
-        <button class="ic" title="Select" :class="{ on: state.tool === 'select' }" :style="ic(2)" @click="tool('select')"></button>
-        <button class="ic" title="Rectangle" :class="{ on: state.tool === 'rect' }" :style="ic(3)" @click="tool('rect')"></button>
-        <button class="ic" title="Circle" :class="{ on: state.tool === 'circle' }" :style="ic(4)" @click="tool('circle')"></button>
-        <button class="ic" title="Text" :style="ic(5)" @click="addText"></button>
-        <button class="ic" title="Pencil" :class="{ on: state.tool === 'pencil' }" :style="ic(17)" @click="tool('pencil')"></button>
+        <Icon title="Select" :class="{ on: state.tool === 'select' }" :n="2" @click="tool('select')" />
+        <Icon title="Rectangle" :class="{ on: state.tool === 'rect' }" :n="3" @click="tool('rect')" />
+        <Icon title="Circle" :class="{ on: state.tool === 'circle' }" :n="4" @click="tool('circle')" />
+        <Icon title="Text" :n="5" @click="addText" />
+        <Icon title="Pencil" :class="{ on: state.tool === 'pencil' }" :n="17" @click="tool('pencil')" />
       </div>
       <div class="line">
-        <button class="ic" title="Save" :style="ic(6)" @click="save"></button>
-        <button class="ic" title="Open" :style="ic(7)" @click="file.click()"></button>
-        <button class="ic" title="Preview" :style="ic(8)" @click="preview"></button>
-        <button class="ic" title="Export" :style="ic(9)" @click="download"></button>
+        <Icon title="Save" :n="6" @click="save" />
+        <Icon title="Open" :n="7" @click="file.click()" />
+        <Icon title="Preview" :n="8" @click="preview" />
+        <Icon title="Export" :n="9" @click="download" />
         <input ref="file" type="file" accept=".json,application/json" hidden @change="pick">
       </div>
       <div class="line">
         <input v-model="link" placeholder="Image link or drop a file" @keydown.enter="img">
-        <button class="ic" title="Add image" :style="ic(10)" @click="img"></button>
+        <Icon title="Add image" :n="10" @click="img" />
       </div>
       <div class="line">
         <input v-model="mediaLink" placeholder="Video or audio link" @keydown.enter="media">
@@ -106,7 +127,7 @@ function tool(t) {
       </div>
       <div class="line">
         <input v-model="fontLink" placeholder="Font link" @keydown.enter="font">
-        <button class="ic" title="Add font" :style="ic(11)" @click="font"></button>
+        <Icon title="Add font" :n="11" @click="font" />
       </div>
       <template v-if="state.tool === 'pencil' && !it">
         <h4>Pencil</h4>
@@ -188,7 +209,7 @@ function tool(t) {
               <select v-model="slot">
                 <option v-for="s in slots" :key="s" :value="s">{{ s }}</option>
               </select>
-              <button class="ic" title="Clear" :style="ic(12, 28)" :disabled="!it.cfg.img[slot]" @click="clearSlot"></button>
+              <Icon title="Clear" :n="12" :s="28" :disabled="!it.cfg.img[slot]" @click="clearSlot" />
             </div>
             <div class="line" @dragover.prevent @drop.prevent="dropSlot">
               <input v-model="slotLink" placeholder="Image link or drop a file" @keydown.enter="setSlot">

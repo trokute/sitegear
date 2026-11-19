@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { state, animTarget } from './store'
 import Preview from './Preview.vue'
-import { ic } from './icon'
+import Icon from './Icon.vue'
 import { presets, origins, eases, startRec, stopRec, applyPose, setKey, delKey, setDur, openKeys, closeKeys, playKeys } from './anim'
 
 const open = ref(false)
@@ -142,7 +142,7 @@ function setBez(n, v) {
           <input type="number" v-model.number="it.anim.dur" min="0.1" step="0.1">
         </div>
         <div class="line">
-          <button class="ic" title="Play" :style="ic(20, 28)" :disabled="!it.anim.name" @click="play"></button>
+          <Icon title="Play" :n="20" :s="28" :disabled="!it.anim.name" @click="play" />
           <button class="tb" :disabled="!it.anim.name" @click="clear">None</button>
         </div>
         <div class="card free" :class="{ on: it.anim.name === 'free' }" @click="pick('free')">
@@ -169,10 +169,10 @@ function setBez(n, v) {
           </div>
           <div class="line">{{ state.kf.t.toFixed(2) }}s of {{ it.keys.dur }}s</div>
           <div class="line">
-            <button class="ic" title="New keyframe" :style="ic(21, 28)" @click="setKey(it, state.kf.t)"></button>
-            <button class="ic" title="Delete keyframe" :style="ic(22, 28)" :disabled="!cur || it.keys.frames.length < 2" @click="delKey(it, state.kf.t)"></button>
-            <button class="ic" title="Previous keyframe" :style="ic(23, 28)" @click="jump(-1)"></button>
-            <button class="ic" title="Next keyframe" :style="ic(24, 28)" @click="jump(1)"></button>
+            <Icon title="New keyframe" :n="21" :s="28" @click="setKey(it, state.kf.t)" />
+            <Icon title="Delete keyframe" :n="22" :s="28" :disabled="!cur || it.keys.frames.length < 2" @click="delKey(it, state.kf.t)" />
+            <Icon title="Previous keyframe" :n="23" :s="28" @click="jump(-1)" />
+            <Icon title="Next keyframe" :n="24" :s="28" @click="jump(1)" />
           </div>
           <div class="line">
             <label>Length</label>

@@ -1,6 +1,6 @@
 <script setup>
 import { state } from './store'
-import { ic } from './icon'
+import Icon from './Icon.vue'
 
 const pics = import.meta.glob('./help/*.png', { eager: true, import: 'default' })
 
@@ -96,7 +96,7 @@ const sections = [
   <div class="panel fixed help">
     <div class="head">
       <span>Help</span>
-      <button class="ic push" title="Close" :style="ic(25, 28)" @click="state.help = false"></button>
+      <Icon class="push" title="Close" :n="25" :s="28" @click="state.help = false" />
     </div>
     <div class="body">
       <template v-for="s in sections" :key="s.t">

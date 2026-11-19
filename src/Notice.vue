@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { state } from './store'
-import { ic } from './icon'
+import Icon from './Icon.vue'
 import readme from '../README.md?raw'
 
 const open = ref(localStorage.getItem('readme') !== readme)
@@ -23,7 +23,7 @@ function close() {
     <div class="head">
       <span>Notice</span>
       <button class="tb" @click="state.help = !state.help">Help</button>
-      <button class="ic push" title="Close" :style="ic(25, 28)" @click="close"></button>
+      <Icon class="push" title="Close" :n="25" :s="28" @click="close" />
     </div>
     <div class="body">
       <template v-for="(l, i) in lines" :key="i">

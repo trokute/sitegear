@@ -1,6 +1,6 @@
 <script setup>
 import { state, addWidget } from './store'
-import { ic } from './icon'
+import Icon from './Icon.vue'
 
 const list = [
   { k: 'wordle', n: 'Wordle' },
@@ -12,7 +12,7 @@ const list = [
   <div class="panel fixed widgets">
     <div class="head">
       <span>Widgets</span>
-      <button class="ic push" title="Close" :style="ic(25, 28)" @click="state.widgets = false"></button>
+      <Icon class="push" title="Close" :n="25" :s="28" @click="state.widgets = false" />
     </div>
     <div class="body">
       <div v-for="w in list" :key="w.k" class="line">

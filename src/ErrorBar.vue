@@ -1,13 +1,13 @@
 <script setup>
 import { state } from './store'
-import { ic } from './icon'
+import Icon from './Icon.vue'
 </script>
 
 <template>
   <div v-if="state.error" class="panel fixed fail">
     <div class="head">
       <span>{{ state.error }}</span>
-      <button class="ic push" title="Close" :style="ic(25, 28)" @click="state.error = ''"></button>
+      <Icon class="push" title="Close" :n="25" :s="28" @click="state.error = ''" />
     </div>
   </div>
 </template>

@@ -84,7 +84,7 @@ async function build() {
         inner = '<div class="x"' + on + ' style="' + vars + '" data-k="' + it.kind + '" data-cfg="' + esc(JSON.stringify(cfg)) + '"></div>'
       } else if (it.type === 'media') {
         const tag = it.kind === 'frame' ? 'iframe' : it.kind
-        inner = '<' + tag + ' class="x"' + on + ' style="' + vars + '" src="' + esc(it.src) + '"' + (tag === 'iframe' ? ' allowfullscreen></iframe>' : ' controls></' + tag + '>')
+        inner = '<' + tag + ' class="x"' + on + ' style="' + vars + '" src="' + esc(it.src) + '"' + (tag === 'iframe' ? ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>' : ' controls></' + tag + '>')
       } else {
         const rad = it.type === 'circle' ? '50%' : it.radius + 'px'
         inner = '<div class="x"' + on + ' style="' + vars + 'background:' + it.color + ';border-radius:' + rad + '"></div>'
