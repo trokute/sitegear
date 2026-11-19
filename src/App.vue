@@ -140,25 +140,22 @@ function shut(e) {
   if (state.menu && !e.target.closest('.menu')) state.menu = null
 }
 
-let was = ''
-
-function focusCls() {
-  was = tg.value.cls || ''
+function cleanCls(e) {
+  e.target.value = e.target.value.replace(/[^\w-]/g, '')
 }
 
 function setCls(e) {
   const t = tg.value
-  const v = e.target.value.replace(/[^\w-]/g, '')
+  const v = e.target.value
   if (v && taken(v, t)) {
     fail('Class name already used')
     e.target.value = t.cls || ''
     return
   }
-  e.target.value = v
+  const was = t.cls || ''
   t.cls = v
-  if (!v) return
-  if (was && was !== v && !taken(was, t)) renameClass(was, v)
-  was = v
+  if (v && was && was !== v && !taken(was, t)) renameClass(was, v)
+  state.menu = null
 }
 
 function doGroup() {
@@ -259,7 +256,7 @@ onUnmounted(() => {
   <div v-if="state.menu" class="panel menu" :style="{ left: state.menu.x + 'px', top: state.menu.y + 'px' }" @contextmenu.prevent>
     <button class="tb" :disabled="selIds().length < 2" @click="doGroup">Group</button>
     <button class="tb" :disabled="!can" @click="doUngroup">Ungroup</button>
-    <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Class name" @focus="focusCls" @input="setCls" @keydown.enter="state.menu = null">
+    <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Class name" @input="cleanCls" @keydown.enter="setCls">
   </div>
   <Document />
   <Layers />
