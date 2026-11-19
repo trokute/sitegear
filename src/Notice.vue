@@ -19,13 +19,13 @@ function close() {
 </script>
 
 <template>
-  <div class="panel fixed notice">
-    <div class="head" @click="open ? close() : open = true">
+  <div v-if="open" class="panel fixed notice">
+    <div class="head">
       <span>Notice</span>
-      <button class="tb" @click.stop="state.help = !state.help">Help</button>
-      <button v-if="open" class="ic push" title="Close" :style="ic(25, 28)" @click.stop="close"></button>
+      <button class="tb" @click="state.help = !state.help">Help</button>
+      <button class="ic push" title="Close" :style="ic(25, 28)" @click="close"></button>
     </div>
-    <div v-if="open" class="body">
+    <div class="body">
       <template v-for="(l, i) in lines" :key="i">
         <h4 v-if="l.t === 'h4'">{{ l.s }}</h4>
         <div v-else class="line">{{ l.t === 'li' ? '- ' + l.s : l.s }}</div>

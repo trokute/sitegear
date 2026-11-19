@@ -49,6 +49,9 @@ function size(s) {
       <div class="line">
         <button class="tb" @click="state.widgets = !state.widgets">Open widget window</button>
       </div>
+      <div class="line">
+        <button class="tb" @click="state.help = !state.help">Open help window</button>
+      </div>
       <div class="line">Page {{ state.page + 1 }} of {{ state.pages.length }}</div>
       <h4>Size</h4>
       <div class="line">

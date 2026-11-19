@@ -52,6 +52,7 @@ function key(e) {
     stopRec()
     return
   }
+  if (e.key === 'Escape' && state.help) state.help = false
   const k = e.key.toLowerCase()
   if ((e.ctrlKey || e.metaKey) && k === 'd') e.preventDefault()
   if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.closest('.script')) return
