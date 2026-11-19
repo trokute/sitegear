@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { state } from './store'
 import { ic } from './icon'
 import readme from '../README.md?raw'
 
@@ -18,12 +19,13 @@ function close() {
 </script>
 
 <template>
-  <div v-if="open" class="panel fixed notice">
-    <div class="head">
+  <div class="panel fixed notice">
+    <div class="head" @click="open ? close() : open = true">
       <span>Notice</span>
-      <button class="ic push" title="Close" :style="ic(25, 28)" @click="close"></button>
+      <button class="tb" @click.stop="state.help = !state.help">Help</button>
+      <button v-if="open" class="ic push" title="Close" :style="ic(25, 28)" @click.stop="close"></button>
     </div>
-    <div class="body">
+    <div v-if="open" class="body">
       <template v-for="(l, i) in lines" :key="i">
         <h4 v-if="l.t === 'h4'">{{ l.s }}</h4>
         <div v-else class="line">{{ l.t === 'li' ? '- ' + l.s : l.s }}</div>

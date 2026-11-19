@@ -3,6 +3,7 @@ import { presets, kfRule, freeCss, keysCss, animVars, closeKeys } from './anim'
 import { googleSet, googleUrl } from './fonts'
 import { strokePath } from './geom'
 import runtime from './runtime.js?raw'
+import mount from './widgets'
 
 const cache = new Map()
 
@@ -47,6 +48,7 @@ async function build() {
   const names = new Set()
   const used = new Set()
   let free = ''
+  let wg = false
   for (const p of state.pages) {
     const parts = []
     const one = async (it, ox, oy, grouped) => {
@@ -75,6 +77,14 @@ async function build() {
         names.add(it.font)
         const f = "font-family:'" + esc(it.font) + "',sans-serif;font-size:" + it.size + 'px;line-height:' + it.lh + ';color:' + it.color
         inner = '<div class="x t"' + on + ' style="' + vars + f + '">' + esc(it.text) + '</div>'
+      } else if (it.type === 'widget') {
+        const cfg = JSON.parse(JSON.stringify(it.cfg))
+        for (const k of Object.keys(cfg.img || {})) cfg.img[k] = await embed(cfg.img[k])
+        wg = true
+        inner = '<div class="x"' + on + ' style="' + vars + '" data-k="' + it.kind + '" data-cfg="' + esc(JSON.stringify(cfg)) + '"></div>'
+      } else if (it.type === 'media') {
+        const tag = it.kind === 'frame' ? 'iframe' : it.kind
+        inner = '<' + tag + ' class="x"' + on + ' style="' + vars + '" src="' + esc(it.src) + '"' + (tag === 'iframe' ? ' allowfullscreen></iframe>' : ' controls></' + tag + '>')
       } else {
         const rad = it.type === 'circle' ? '50%' : it.radius + 'px'
         inner = '<div class="x"' + on + ' style="' + vars + 'background:' + it.color + ';border-radius:' + rad + '"></div>'
@@ -109,6 +119,7 @@ async function build() {
     const show = pages.length === 0 ? 'display:block;' : ''
     pages.push('<div class="p" style="' + show + 'width:' + p.w + 'px;height:' + p.h + 'px;background:' + p.bg + '">\n' + parts.join('\n') + '\n</div>')
   }
+  if (wg) names.add('Patrick Hand')
   if (code.includes('_newtext(')) state.fonts.forEach(f => names.add(f.name))
   const hrefs = new Set()
   names.forEach(n => {
@@ -119,12 +130,12 @@ async function build() {
   const links = [...hrefs].map(h => '<link rel="stylesheet" href="' + esc(h) + '">').join('\n')
   const kf = presets.filter(p => used.has(p[0]) || code.includes('_anim(')).map(kfRule).join('') + free
   const fit = "var ps=document.querySelectorAll('.p'),w=document.getElementById('w'),c=0,seen=[];function play(x){x.classList.remove('on');void x.offsetWidth;x.classList.add('on')}function fit(){var p=ps[c],v=document.documentElement.clientWidth,k=Math.min(1,v/p.offsetWidth);p.style.transform='scale('+k+')';p.style.left=Math.max(0,(v-p.offsetWidth*k)/2)+'px';w.style.height=p.offsetHeight*k+'px'}function enter(){var p=ps[c];p.querySelectorAll('.x[data-on=page]').forEach(play);if(!seen[c]){seen[c]=1;p.querySelectorAll('.x[data-on=site]').forEach(play)}}function show(i){if(i<0||i>=ps.length)return;ps[c].style.display='none';c=i;ps[c].style.display='block';fit();scrollTo(0,0);enter()}document.addEventListener('click',function(e){var i=e.target.closest('.i');if(!i)return;var g=i.dataset.go;for(var j=i;j;j=j.parentElement.closest('.i')){var x=j.querySelector(':scope>.x[data-on=click]');if(x)play(x)}if(g!==undefined)show(g=='next'?c+1:g=='prev'?c-1:+g)});addEventListener('resize',fit);fit();enter()"
-  const css = 'html,body{margin:0;background:' + state.backdrop + '}#w{position:relative;width:100%;overflow:hidden}.p{position:absolute;top:0;left:0;display:none;overflow:hidden;transform-origin:0 0}.i{position:absolute}.x{width:100%;height:100%;transform-origin:var(--o,50% 50%)}img.x,svg.x{display:block;overflow:visible}.t{white-space:pre-wrap;overflow-wrap:break-word}.g{cursor:pointer}.x[data-on=loop]{animation:var(--a) var(--d) var(--e) infinite}.i:hover>.x[data-on=hover]{animation:var(--a) var(--d) var(--e) infinite}.x.on{animation:var(--a) var(--d) var(--e) 1 both}' + kf
+  const css = 'html,body{margin:0;background:' + state.backdrop + '}#w{position:relative;width:100%;overflow:hidden}.p{position:absolute;top:0;left:0;display:none;overflow:hidden;transform-origin:0 0}.i{position:absolute}.x{width:100%;height:100%;transform-origin:var(--o,50% 50%)}img.x,svg.x,video.x,audio.x,iframe.x{display:block;overflow:visible}iframe.x{border:0}.t{white-space:pre-wrap;overflow-wrap:break-word}.g{cursor:pointer}.x[data-on=loop]{animation:var(--a) var(--d) var(--e) infinite}.i:hover>.x[data-on=hover]{animation:var(--a) var(--d) var(--e) infinite}.x.on{animation:var(--a) var(--d) var(--e) 1 both}' + kf
   const data = '<script>var _S=' + JSON.stringify(snd).replace(/</g, '\\u003c') + ';var _BG=' + (bg ? JSON.stringify({ n: bg.name, v: state.audio.vol }) : 'null') + '</script>\n'
   const run = code || bg ? data + '<script>' + runtime + '</script>\n<script>(function () {\n' + code.replace(/<\//g, '<\\/') + '\n})()\n_start()</script>\n' : ''
   return '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Site</title>\n' + links +
     '\n<style>' + css + '</style>\n</head>\n<body>\n<div id="w">\n' +
-    pages.join('\n') + '\n</div>\n<script>' + fit + '</script>\n' + run + '</body>\n</html>\n'
+    pages.join('\n') + '\n</div>\n<script>' + fit + '</script>\n' + (wg ? '<script>var m=' + mount + ';document.querySelectorAll("[data-k]").forEach(function(e){m(e,e.dataset.k,JSON.parse(e.dataset.cfg))})</script>\n' : '') + run + '</body>\n</html>\n'
 }
 
 function wrap(html) {

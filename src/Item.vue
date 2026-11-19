@@ -1,9 +1,10 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { state, select, selIds, fail } from './store'
 import { snapMove, strokePath } from './geom'
 import { animVars } from './anim'
 import { family } from './fonts'
+import mount from './widgets'
 
 const props = defineProps({ item: Object })
 
@@ -15,11 +16,20 @@ const corners = [
 ].map(c => ({ ...c, s: { left: c.sx < 0 ? '0%' : '100%', top: c.sy < 0 ? '0%' : '100%' } }))
 
 const fx = ref(null)
+const wg = ref(null)
 const av = computed(() => props.item.gid ? null : animVars(props.item))
 const keysOn = computed(() => !props.item.gid && !!(props.item.anim && props.item.anim.name === 'keys' && props.item.keys))
 const op = computed(() => (props.item.opacity ?? 100) / 100)
 const cst = computed(() => ({ opacity: keysOn.value ? 1 : op.value }))
 const fxs = computed(() => ({ ...(av.value || {}), ...(keysOn.value ? { opacity: op.value } : {}) }))
+
+function build() {
+  if (wg.value) mount(wg.value, props.item.kind, props.item.cfg)
+}
+
+onMounted(build)
+
+watch(() => props.item.type === 'widget' ? JSON.stringify([props.item.kind, props.item.cfg]) : '', () => nextTick(build))
 
 function restart() {
   const el = fx.value
@@ -184,6 +194,8 @@ function rotate(e) {
         <path :d="sp" fill="none" :stroke="item.color" :stroke-width="item.sw" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
       <div v-else-if="item.type === 'text'" class="txt" :style="tstyle">{{ item.text }}</div>
+      <div v-else-if="item.type === 'widget'" ref="wg" class="wgi" :style="cst"></div>
+      <component :is="item.kind === 'frame' ? 'iframe' : item.kind" v-else-if="item.type === 'media'" class="wgi" :src="item.src" :controls="item.kind !== 'frame'" allowfullscreen :style="cst" @error="fail('Media failed to load')" />
       <div v-else class="shape" :style="sstyle"></div>
     </div>
     <div v-if="multi" class="box multi"></div>

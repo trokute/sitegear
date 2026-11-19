@@ -11,7 +11,10 @@ import Animation from './Animation.vue'
 import Notice from './Notice.vue'
 import ErrorBar from './ErrorBar.vue'
 import { stopRec } from './anim'
-import { addFiles } from './sounds'
+import { dropFile } from './media'
+import Widgets from './Widgets.vue'
+import Pick from './Pick.vue'
+import Help from './Help.vue'
 
 const Scripting = defineAsyncComponent(() => import('./Scripting.vue'))
 
@@ -206,8 +209,8 @@ function drop(e) {
   let x = (e.clientX - b.left) / z.value
   let y = (e.clientY - b.top) / z.value
   for (const f of e.dataTransfer.files) {
-    if (f.type.startsWith('audio/')) {
-      addFiles([f], false)
+    if (f.type.startsWith('audio/') || f.type.startsWith('video/')) {
+      dropFile(f, x, y)
       continue
     }
     if (!f.type.startsWith('image/')) continue
@@ -260,6 +263,9 @@ onUnmounted(() => {
   <Document />
   <Layers />
   <Scripting v-if="state.coding" />
+  <Widgets v-if="state.widgets" />
+  <Pick />
+  <Help v-if="state.help" />
   <Notice />
   <ErrorBar />
 </template>

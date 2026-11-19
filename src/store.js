@@ -36,6 +36,9 @@ export const state = reactive({
   rec: null,
   kf: null,
   coding: false,
+  widgets: false,
+  help: false,
+  pending: null,
   script: null,
   sounds: [],
   audio: { bg: '', vol: 100 },
@@ -261,6 +264,21 @@ export function addImage(src, x = 120, y = 120) {
   state.sel = it.id
 }
 
+export function addWidget(kind) {
+  const mines = kind === 'mines'
+  const cfg = mines ? { mines: 10, custom: false, img: {} } : { word: 'crane', max: 6 }
+  const it = reactive({ id: ++n, type: 'widget', kind, cfg, x: 120, y: 120, w: 320, h: mines ? 360 : 400, r: 0, link: '', opacity: 100, anim: defAnim() })
+  state.items.push(it)
+  state.sel = it.id
+}
+
+export function addMedia(kind, src, x = 120, y = 120) {
+  const au = kind === 'audio'
+  const it = reactive({ id: ++n, type: 'media', kind, src, x, y, w: au ? 320 : 480, h: au ? 54 : 270, r: 0, link: '', opacity: 100, anim: defAnim() })
+  state.items.push(it)
+  state.sel = it.id
+}
+
 export function remove() {
   const ids = selIds()
   state.items = state.items.filter(i => !ids.includes(i.id))
@@ -432,6 +450,8 @@ export function load(d) {
   state.page = 0
   state.backdrop = d.backdrop || '#ffffff'
   state.coding = false
+  state.widgets = false
+  state.pending = null
   state.script = d.script || null
   state.sounds = d.sounds || []
   state.audio = d.audio || { bg: '', vol: 100 }

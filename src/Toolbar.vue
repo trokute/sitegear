@@ -5,10 +5,17 @@ import { preview, download } from './export'
 import { ic } from './icon'
 import { googleFonts, googleAll, family } from './fonts'
 import { save, open as openFile } from './project'
+import { offer } from './media'
 
 const open = ref(true)
 const link = ref('')
 const fontLink = ref('')
+const mediaLink = ref('')
+const slot = ref('mine')
+const slotLink = ref('')
+const slots = ['mine', 'tile', 'flag', '1', '2', '3', '4', '5', '6', '7', '8']
+const titles = { text: 'Text', image: 'Image', rect: 'Rectangle', stroke: 'Stroke', widget: 'Widget', media: 'Media' }
+const plain = ['image', 'widget', 'media']
 const file = ref(null)
 const it = computed(selected)
 const gi = computed(() => {
@@ -19,6 +26,31 @@ const gi = computed(() => {
 function img() {
   addImage(link.value.trim())
   link.value = ''
+}
+
+function media() {
+  offer(mediaLink.value)
+  mediaLink.value = ''
+}
+
+function setSlot() {
+  const v = slotLink.value.trim()
+  if (v) it.value.cfg.img[slot.value] = v
+  slotLink.value = ''
+}
+
+function dropSlot(e) {
+  const f = e.dataTransfer.files[0]
+  if (!f || !f.type.startsWith('image/')) return
+  const r = new FileReader()
+  r.onload = () => {
+    it.value.cfg.img[slot.value] = r.result
+  }
+  r.readAsDataURL(f)
+}
+
+function clearSlot() {
+  delete it.value.cfg.img[slot.value]
 }
 
 function font() {
@@ -69,6 +101,10 @@ function tool(t) {
         <button class="ic" title="Add image" :style="ic(10)" @click="img"></button>
       </div>
       <div class="line">
+        <input v-model="mediaLink" placeholder="Video or audio link" @keydown.enter="media">
+        <button class="tb" title="Add media" @click="media">Add</button>
+      </div>
+      <div class="line">
         <input v-model="fontLink" placeholder="Font link" @keydown.enter="font">
         <button class="ic" title="Add font" :style="ic(11)" @click="font"></button>
       </div>
@@ -112,7 +148,7 @@ function tool(t) {
         </div>
       </template>
       <template v-if="it">
-        <h4>{{ it.type === 'text' ? 'Text' : it.type === 'image' ? 'Image' : it.type === 'rect' ? 'Rectangle' : it.type === 'stroke' ? 'Stroke' : 'Circle' }}</h4>
+        <h4>{{ titles[it.type] || 'Circle' }}</h4>
         <div class="line" v-if="it.type === 'text'">
           <textarea v-model="it.text" rows="3"></textarea>
         </div>
@@ -120,6 +156,46 @@ function tool(t) {
           <label>Link</label>
           <input v-model="it.src">
         </div>
+        <div class="line" v-if="it.type === 'media' && !it.src.startsWith('data:')">
+          <label>Link</label>
+          <input v-model="it.src">
+        </div>
+        <template v-if="it.type === 'widget' && it.kind === 'wordle'">
+          <div class="line">
+            <label>Word</label>
+            <input v-model="it.cfg.word">
+          </div>
+          <div class="line">
+            <label>Guesses</label>
+            <input type="number" v-model.number="it.cfg.max" min="1" max="12">
+          </div>
+        </template>
+        <template v-if="it.type === 'widget' && it.kind === 'mines'">
+          <div class="line">
+            <label>Mines</label>
+            <input type="number" v-model.number="it.cfg.mines" min="1" max="80">
+          </div>
+          <div class="line">
+            <label>Graphics</label>
+            <select v-model="it.cfg.custom">
+              <option :value="false">Default</option>
+              <option :value="true">Custom</option>
+            </select>
+          </div>
+          <template v-if="it.cfg.custom">
+            <div class="line">
+              <label>Tile</label>
+              <select v-model="slot">
+                <option v-for="s in slots" :key="s" :value="s">{{ s }}</option>
+              </select>
+              <button class="ic" title="Clear" :style="ic(12, 28)" :disabled="!it.cfg.img[slot]" @click="clearSlot"></button>
+            </div>
+            <div class="line" @dragover.prevent @drop.prevent="dropSlot">
+              <input v-model="slotLink" placeholder="Image link or drop a file" @keydown.enter="setSlot">
+              <button class="tb" @click="setSlot">Set</button>
+            </div>
+          </template>
+        </template>
         <template v-if="it.type === 'text'">
           <div class="line">
             <label>Font</label>
@@ -144,7 +220,7 @@ function tool(t) {
             <input type="number" v-model.number="it.lh" min="0.5" step="0.1">
           </div>
         </template>
-        <div class="line" v-if="it.type !== 'image'">
+        <div class="line" v-if="!plain.includes(it.type)">
           <label>Color</label>
           <input type="color" v-model="it.color">
         </div>

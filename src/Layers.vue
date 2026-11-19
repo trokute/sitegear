@@ -6,8 +6,8 @@ const open = ref(true)
 const from = ref(-1)
 const rows = computed(() => [...state.items].reverse())
 
-const names = { image: 'Image', rect: 'Rectangle', circle: 'Circle', stroke: 'Stroke' }
-const tags = { text: 'T', image: 'Img', rect: 'R', circle: 'C', stroke: 'P' }
+const names = { image: 'Image', rect: 'Rectangle', circle: 'Circle', stroke: 'Stroke', widget: 'Widget', media: 'Media' }
+const tags = { text: 'T', image: 'Img', rect: 'R', circle: 'C', stroke: 'P', widget: 'W', media: 'M' }
 
 function label(it) {
   return it.type === 'text' ? it.text.slice(0, 12) : names[it.type]
