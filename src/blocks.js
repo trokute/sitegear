@@ -57,16 +57,31 @@ export const theme = Blockly.Theme.defineTheme('sitegear', {
   }
 })
 
+const loose = b => b.inputList.forEach(i => i.type === Blockly.inputs.inputTypes.VALUE && i.setCheck(null))
+
 const ifInit = Blockly.Blocks.controls_if.init
 Blockly.Blocks.controls_if.init = function () {
   ifInit.call(this)
   this.setColour(C.co)
+  const shape = this.updateShape_
+  this.updateShape_ = function () {
+    shape.call(this)
+    loose(this)
+  }
+  loose(this)
+}
+
+for (const type of ['logic_operation', 'logic_negate']) {
+  const init = Blockly.Blocks[type].init
+  Blockly.Blocks[type].init = function () {
+    init.call(this)
+    loose(this)
+  }
 }
 
 const o = { type: 'input_value', name: 'OBJ', check: 'Obj' }
 const num = name => ({ type: 'input_value', name, check: 'Number' })
 const any = name => ({ type: 'input_value', name })
-const bool = name => ({ type: 'input_value', name, check: 'Boolean' })
 const dd = (name, options) => ({ type: 'field_dropdown', name, options })
 const st = { type: 'input_statement', name: 'DO' }
 const act = { previousStatement: null, nextStatement: null, inputsInline: true }
@@ -153,8 +168,8 @@ const defs = [
   { type: 'sg_class', message0: 'class of %1', args0: [o], output: 'String', colour: C.la, inputsInline: true },
   { type: 'sg_wait', message0: 'wait %1 seconds', args0: [num('T')], ...cc },
   { type: 'sg_repeat', message0: 'repeat %1', args0: [num('N')], message1: 'do %1', args1: [st], ...cc },
-  { type: 'sg_repuntil', message0: 'repeat until %1', args0: [bool('COND')], message1: 'do %1', args1: [st], ...cc },
-  { type: 'sg_waituntil', message0: 'wait until %1', args0: [bool('COND')], ...cc },
+  { type: 'sg_repuntil', message0: 'repeat until %1', args0: [any('COND')], message1: 'do %1', args1: [st], ...cc },
+  { type: 'sg_waituntil', message0: 'wait until %1', args0: [any('COND')], ...cc },
   { type: 'sg_forever', message0: 'forever', message1: 'do %1', args1: [st], previousStatement: null, colour: C.co, inputsInline: true },
   { type: 'sg_after', message0: 'after %1 seconds', args0: [num('T')], message1: 'do %1', args1: [st], ...cc },
   { type: 'sg_send', message0: 'send %1', args0: [{ type: 'field_input', name: 'M', text: 'go' }], ...cc },
