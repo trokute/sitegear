@@ -14,9 +14,9 @@ Contributions are welcome!
 
 ## Roadmaps:
 [] more widgets
-[x] better align
+[] better align
 [x] js scripting api instead of blockly (advanced)
 [] docs/ including javascript api documentation 
-
+don't cramp all 4 wide buttons on document tab at once
 
 ###### @trokute in discord for feature request/bugs
