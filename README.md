@@ -9,7 +9,7 @@
 
 ## Note:
 unable really did awesome on the UI so kudos for them! they wrote most of the frontend while I go with the backend tho sometimes they helps me.
-
+we gon take a break since I barely slept tonight and exam is coming so see ya!
 Contributions are welcome!
 
 ## Roadmaps:
