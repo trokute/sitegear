@@ -3,6 +3,7 @@ import { registerFieldColour } from '@blockly/field-colour'
 import { javascriptGenerator as gen, Order } from 'blockly/javascript'
 import { state } from './store'
 import { presets } from './anim'
+import { api } from './api'
 
 registerFieldColour()
 
@@ -263,7 +264,7 @@ f.sg_fxclear = () => '_fxclear();\n'
 f.sg_vchg = b => '_vchg(' + val(b, 'V') + ');\n'
 f.sg_vset = b => '_vset(' + val(b, 'V') + ');\n'
 f.sg_bgvol = b => '_bgvol(' + val(b, 'V') + ');\n'
-f.sg_vol = () => ['_vol', Order.ATOMIC]
+f.sg_vol = () => ['_volume()', Order.FUNCTION_CALL]
 
 const cl = b => fld(b, 'CLS')
 const co = b => fld(b, 'COL')
@@ -460,7 +461,7 @@ export const toolbox = c => {
 export function setup(ws) {
   ws.registerToolboxCategoryCallback('OBJECTS', () => {
     const l = names().sort((a, b) => (b === ctx) - (a === ctx))
-    if (!l.length) return [{ kind: 'label', text: 'Right click an element to set its class' }]
+    if (!l.length) return [{ kind: 'label', text: 'Right click an element to set its name' }]
     return l.map(c => ({ kind: 'block', type: 'sg_obj', fields: { C: c } }))
   })
 }
@@ -473,4 +474,9 @@ export function compile(json) {
   const code = gen.workspaceToCode(ws)
   ws.dispose()
   return code.replace(/^var ([^;]+);/m, (m, v) => 'var ' + v.split(', ').map(x => x + ' = 0').join(', ') + ';')
+}
+
+export function migrate(json) {
+  const m = Object.fromEntries(api.map(a => [a[1], 'sg.' + a[0]]))
+  return compile(json).trim().replace(/_volume\(\)/g, 'sg.volume').replace(/\b_\w+\b/g, x => m[x] || x)
 }

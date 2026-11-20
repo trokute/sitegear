@@ -32,7 +32,7 @@ function _q(n) {
 }
 
 function _L(o) {
-  return o || []
+  return o && o.node ? [o.node] : o || []
 }
 
 function _e(o, f) {
@@ -179,14 +179,14 @@ function _rect(cls, x, y, w, h, col, r) {
   var b = _box('div')
   b.style.background = col
   b.style.borderRadius = _px(r)
-  _add(cls, x, y, w, h, b)
+  return _add(cls, x, y, w, h, b)
 }
 
 function _circle(cls, x, y, w, h, col) {
   var b = _box('div')
   b.style.background = col
   b.style.borderRadius = '50%'
-  _add(cls, x, y, w, h, b)
+  return _add(cls, x, y, w, h, b)
 }
 
 function _newtext(cls, t, x, y, s, f, col) {
@@ -199,6 +199,7 @@ function _newtext(cls, t, x, y, s, f, col) {
   e.style.height = 'auto'
   e.style.width = e.offsetWidth + 'px'
   e.style.height = e.offsetHeight + 'px'
+  return e
 }
 
 function _img(cls, u, x, y, w) {
@@ -208,6 +209,7 @@ function _img(cls, u, x, y, w) {
   b.onload = function () {
     if (b.naturalWidth) e.style.height = _px(w * b.naturalHeight / b.naturalWidth)
   }
+  return e
 }
 
 function _dup(o) {
@@ -566,6 +568,10 @@ function _fxclear() {
 function _vset(v) {
   _vol = _lim(v, 0, 100)
   _tuneAll()
+}
+
+function _volume() {
+  return _vol
 }
 
 function _vchg(d) {

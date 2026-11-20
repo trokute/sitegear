@@ -20,7 +20,7 @@ const sections = [
     t: 'Tool Bar',
     i: ['toolbar'],
     p: [
-      '1 is select, 2 is rectangle tool, 3 is circle, 4 is text tool, 5 is pencil tool, 6 is save, 7 is upload, 8 is preview, 9 is export to html',
+      '1 is select, 2 is rectangle tool, 3 is circle, 4 is text tool, 5 is pencil tool, 6 is save to this browser, 7 is load which goes back to the project window, 8 is preview, 9 is export to html',
       '- image link takes a link or drop an image file right on the page.',
       '- font link takes a Google Fonts link then shows up in the Font list for text.',
       '- you can configure element properties here.'
@@ -32,7 +32,7 @@ const sections = [
     p: [
       '- ctrl+Z undo, ctrl+Y redo, ctrl+C / X / V copy cut paste, ctrl+D duplicate, backspace or delete to delete',
       '- right click elements to group or ungroup whats selected.',
-      '- class name is for scripting to identify object'
+      '- name is for scripting to identify the element, in JavaScript it becomes a variable'
     ]
   },
   {
@@ -70,8 +70,12 @@ const sections = [
     i: ['scripting'],
     p: [
       '- blocks sit in Events, Motion, Looks, Sound, Create, Pen, Layers, Control, Sensing, Operators, Variables and Functions',
-      '- give an element a class name and it shows up under objects so you can script it',
-      '- scripts run in Preview and in the export'
+      '- give an element a name and it shows up under objects so you can script it',
+      '- scripts run in Preview and in the export',
+      '- migrate to JavaScript in the document window turns blocks into code and opens a code editor instead, you cannot go back to blocks',
+      '- in JavaScript every element with a name is a variable, so ball.x = 100 moves it',
+      '- the tabs at the bottom of the scripting window switch between Main and the script of an element, select an element to write its own script and use this to refer to it',
+      '- type sg. or this. to see everything available, use await sg.frame() inside loops'
     ]
   },
   {

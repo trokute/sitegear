@@ -291,6 +291,18 @@ h4 {
   cursor: pointer;
 }
 
+.tb.on {
+  background: #fff;
+  outline: 2px solid #fff;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  overflow-x: auto;
+}
+
 .tb:hover {
   background: #fff;
 }
@@ -510,7 +522,7 @@ h4 {
   touch-action: none;
 }
 
-.blocks {
+.blocks, .code {
   flex: 1;
   min-height: 0;
   position: relative;
@@ -537,6 +549,35 @@ h4 {
   bottom: auto;
   width: 240px;
   z-index: 45;
+}
+
+.confirm {
+  top: 40px;
+  left: 540px;
+  bottom: auto;
+  width: 320px;
+  z-index: 100;
+}
+
+.projects {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 50;
+}
+
+.pj {
+  top: 40px;
+  left: 40px;
+  bottom: auto;
+  width: 460px;
+  max-height: calc(100vh - 80px);
+}
+
+.pr {
+  padding: 6px 8px 0 8px;
+  margin-bottom: 8px;
+  cursor: default;
 }
 
 .pick {

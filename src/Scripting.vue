@@ -1,18 +1,18 @@
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import * as Blockly from 'blockly'
 import { state, animTarget, renames } from './store'
 import Icon from './Icon.vue'
 import { toolbox, theme, setup, scan, forget } from './blocks'
 import { addFiles } from './sounds'
+import { drag } from './drag'
 
 const root = ref(null)
 const win = ref(null)
 const inp = ref(null)
 const ask = ref(null)
-const pos = ref({ x: 40, y: 40 })
-const ap = ref({ x: 0, y: 0 })
-const refs = { pos, ap }
+const pos = reactive({ x: 40, y: 40 })
+const ap = reactive({ x: 0, y: 0 })
 let ws = null
 let ro = null
 let stop = null
@@ -29,7 +29,7 @@ function rename(from, to) {
 }
 
 watch(ask, (v, o) => {
-  if (v && !o) ap.value = { x: (win.value.clientWidth - 280) / 2, y: (win.value.clientHeight - 140) / 2 }
+  if (v && !o) Object.assign(ap, { x: (win.value.clientWidth - 280) / 2, y: (win.value.clientHeight - 140) / 2 })
   if (v && !v.confirm) nextTick(() => inp.value && inp.value.focus())
 })
 
@@ -47,20 +47,6 @@ function drop(e) {
 function ctx() {
   const t = animTarget()
   return t && t.cls ? t.cls : ''
-}
-
-function drag(e, k) {
-  if (e.target.closest('button')) return
-  const p = refs[k]
-  const sx = e.clientX - p.value.x
-  const sy = e.clientY - p.value.y
-  const t = e.currentTarget
-  t.setPointerCapture(e.pointerId)
-  const move = ev => {
-    p.value = { x: Math.max(0, ev.clientX - sx), y: Math.max(0, ev.clientY - sy) }
-  }
-  t.addEventListener('pointermove', move)
-  t.addEventListener('pointerup', () => t.removeEventListener('pointermove', move), { once: true })
 }
 
 onMounted(() => {
@@ -104,13 +90,13 @@ onUnmounted(() => {
 
 <template>
   <div ref="win" class="panel fixed script" @dragover.prevent @drop.prevent="drop" :style="{ left: pos.x + 'px', top: pos.y + 'px' }">
-    <div class="head" @pointerdown="drag($event, 'pos')">
+    <div class="head" @pointerdown="drag($event, pos)">
       <span>Scripting</span>
       <Icon class="push" title="Close" :n="25" :s="28" @click="state.coding = false" />
     </div>
     <div ref="root" class="blocks"></div>
     <div v-if="ask" class="panel ask" :style="{ left: ap.x + 'px', top: ap.y + 'px' }">
-      <div class="head" @pointerdown="drag($event, 'ap')">
+      <div class="head" @pointerdown="drag($event, ap)">
         <span>{{ ask.confirm ? 'Confirm' : 'Name' }}</span>
       </div>
       <div class="body">

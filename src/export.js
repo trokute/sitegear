@@ -1,11 +1,14 @@
-import { state, gitem } from './store'
+import { state, gitem, classes, scripts as holders } from './store'
 import { presets, kfRule, freeCss, keysCss, animVars, closeKeys } from './anim'
 import { googleSet, googleUrl } from './fonts'
 import { strokePath } from './geom'
 import runtime from './runtime.js?raw'
 import mount from './widgets'
+import { runtimeApi } from './api'
+import elements from './elements.js?raw'
 
 const cache = new Map()
+const reserved = new Set('break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield let static await async sg undefined NaN Infinity arguments eval'.split(' '))
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -34,15 +37,22 @@ async function embed(src) {
 async function build() {
   closeKeys()
   let code = ''
-  if (state.script && state.script.blocks) {
+  if (state.mode === 'js') {
+    code = state.js.trim()
+  } else if (state.script && state.script.blocks) {
     const b = await import('./blocks')
     code = b.compile(state.script).trim()
   }
   const bg = state.sounds.find(s => s.name === state.audio.bg)
+  const all = [code, ...holders().map(h => h.obj.js || '')].join('\n')
+  const idents = state.mode === 'js' ? classes().filter(n => /^[A-Za-z_$][\w$]*$/.test(n) && !reserved.has(n)) : []
+  const head = idents.length ? 'var ' + idents.map(n => n + ' = sg.find(' + JSON.stringify(n) + ')').join(', ') + ';\n' : ''
+  const scripts = []
   const snd = {}
   for (const s of state.sounds) {
-    if (s.name === state.audio.bg || code.includes(JSON.stringify(s.name))) snd[s.name] = await embed(s.src)
+    if (s.name === state.audio.bg || all.includes('"' + s.name + '"') || all.includes("'" + s.name + "'")) snd[s.name] = await embed(s.src)
   }
+  const tag = o => o.js && o.js.trim() ? ' data-s="' + (scripts.push(o.js.trim()) - 1) + '"' : ''
   const idx = new Map(state.pages.map((p, i) => [p.id, i]))
   const pages = []
   const names = new Set()
@@ -56,7 +66,7 @@ async function build() {
       if (it.link === 'next' || it.link === 'prev') go = it.link
       else if (idx.has(it.link)) go = idx.get(it.link)
       const cls = go === '' ? 'i' : 'i g'
-      const att = (go === '' ? '' : ' data-go="' + go + '"') + (it.cls ? ' data-c="' + esc(it.cls) + '"' : '')
+      const att = (go === '' ? '' : ' data-go="' + go + '"') + (it.cls ? ' data-c="' + esc(it.cls) + '"' : '') + tag(it)
       const v = grouped ? null : animVars(it)
       const keys = v && it.anim.name === 'keys'
       const op = (it.opacity ?? 100) / 100
@@ -114,13 +124,13 @@ async function build() {
       const vars = (v ? Object.entries(v).map(([k, x]) => k + ':' + x).join(';') + ';' : '') + (keys ? 'opacity:' + op + ';' : '')
       const kids = []
       for (const i of m) kids.push(await one(i, gi.x, gi.y, true))
-      parts.push('<div class="i"' + (gi.cls ? ' data-c="' + esc(gi.cls) + '"' : '') + ' style="left:' + gi.x + 'px;top:' + gi.y + 'px;width:' + gi.w + 'px;height:' + gi.h + 'px' + (op < 1 && !keys ? ';opacity:' + op : '') + '"><div class="x"' + on + ' style="' + vars + '">' + kids.join('\n') + '</div></div>')
+      parts.push('<div class="i"' + (gi.cls ? ' data-c="' + esc(gi.cls) + '"' : '') + tag(a) + ' style="left:' + gi.x + 'px;top:' + gi.y + 'px;width:' + gi.w + 'px;height:' + gi.h + 'px' + (op < 1 && !keys ? ';opacity:' + op : '') + '"><div class="x"' + on + ' style="' + vars + '">' + kids.join('\n') + '</div></div>')
     }
     const show = pages.length === 0 ? 'display:block;' : ''
     pages.push('<div class="p" style="' + show + 'width:' + p.w + 'px;height:' + p.h + 'px;background:' + p.bg + '">\n' + parts.join('\n') + '\n</div>')
   }
   if (wg) names.add('Patrick Hand')
-  if (code.includes('_newtext(')) state.fonts.forEach(f => names.add(f.name))
+  if (/newtext\(|font|create\(/.test(all)) state.fonts.forEach(f => names.add(f.name))
   const hrefs = new Set()
   names.forEach(n => {
     const f = state.fonts.find(x => x.name === n)
@@ -128,11 +138,15 @@ async function build() {
     else if (googleSet.has(n)) hrefs.add(googleUrl(n))
   })
   const links = [...hrefs].map(h => '<link rel="stylesheet" href="' + esc(h) + '">').join('\n')
-  const kf = presets.filter(p => used.has(p[0]) || code.includes('_anim(')).map(kfRule).join('') + free
+  const kf = presets.filter(p => used.has(p[0]) || /anim\(|play\(|loop\(/.test(all)).map(kfRule).join('') + free
   const fit = "var ps=document.querySelectorAll('.p'),w=document.getElementById('w'),c=0,seen=[];function play(x){x.classList.remove('on');void x.offsetWidth;x.classList.add('on')}function fit(){var p=ps[c],v=document.documentElement.clientWidth,k=Math.min(1,v/p.offsetWidth);p.style.transform='scale('+k+')';p.style.left=Math.max(0,(v-p.offsetWidth*k)/2)+'px';w.style.height=p.offsetHeight*k+'px'}function enter(){var p=ps[c];p.querySelectorAll('.x[data-on=page]').forEach(play);if(!seen[c]){seen[c]=1;p.querySelectorAll('.x[data-on=site]').forEach(play)}}function show(i){if(i<0||i>=ps.length)return;ps[c].style.display='none';c=i;ps[c].style.display='block';fit();scrollTo(0,0);enter()}document.addEventListener('click',function(e){var i=e.target.closest('.i');if(!i)return;var g=i.dataset.go;for(var j=i;j;j=j.parentElement.closest('.i')){var x=j.querySelector(':scope>.x[data-on=click]');if(x)play(x)}if(g!==undefined)show(g=='next'?c+1:g=='prev'?c-1:+g)});addEventListener('resize',fit);fit();enter()"
   const css = 'html,body{margin:0;background:' + state.backdrop + '}#w{position:relative;width:100%;overflow:hidden}.p{position:absolute;top:0;left:0;display:none;overflow:hidden;transform-origin:0 0}.i{position:absolute}.x{width:100%;height:100%;transform-origin:var(--o,50% 50%)}img.x,svg.x,video.x,audio.x,iframe.x{display:block;overflow:visible}iframe.x{border:0}.t{white-space:pre-wrap;overflow-wrap:break-word}.g{cursor:pointer}.x[data-on=loop]{animation:var(--a) var(--d) var(--e) infinite}.i:hover>.x[data-on=hover]{animation:var(--a) var(--d) var(--e) infinite}.x.on{animation:var(--a) var(--d) var(--e) 1 both}' + kf
   const data = '<script>var _S=' + JSON.stringify(snd).replace(/</g, '\\u003c') + ';var _BG=' + (bg ? JSON.stringify({ n: bg.name, v: state.audio.vol }) : 'null') + '</script>\n'
-  const run = code || bg ? data + '<script>' + runtime + '</script>\n<script>(function () {\n' + code.replace(/<\//g, '<\\/') + '\n})()\n_start()</script>\n' : ''
+  const wrap = f => '(async function () {\n' + head + f + '\n})'
+  const safe = f => f.replace(/<\//g, '<\\/')
+  const main = code ? '<script>' + wrap(safe(code)) + '.call(sg)</script>\n' : ''
+  const parts = scripts.map((f, k) => '<script>sg.run(' + k + ', ' + wrap(safe(f)) + ')</script>\n').join('')
+  const run = code || bg || scripts.length ? data + '<script>' + runtime + runtimeApi() + elements + '</script>\n' + main + parts + '<script>_start()</script>\n' : ''
   return '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Site</title>\n' + links +
     '\n<style>' + css + '</style>\n</head>\n<body>\n<div id="w">\n' +
     pages.join('\n') + '\n</div>\n<script>' + fit + '</script>\n' + (wg ? '<script>var m=' + mount + ';document.querySelectorAll("[data-k]").forEach(function(e){m(e,e.dataset.k,JSON.parse(e.dataset.cfg))})</script>\n' : '') + run + '</body>\n</html>\n'

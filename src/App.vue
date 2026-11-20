@@ -15,8 +15,11 @@ import { dropFile } from './media'
 import Widgets from './Widgets.vue'
 import Pick from './Pick.vue'
 import Help from './Help.vue'
+import Projects from './Projects.vue'
+import Confirm from './Confirm.vue'
 
 const Scripting = defineAsyncComponent(() => import('./Scripting.vue'))
+const Code = defineAsyncComponent(() => import('./Code.vue'))
 
 const z = computed(() => state.zoom)
 const rows = computed(() => {
@@ -47,6 +50,7 @@ function box() {
 }
 
 function key(e) {
+  if (!state.project) return
   if (e.key === 'Enter' && state.rec) {
     e.preventDefault()
     stopRec()
@@ -148,7 +152,7 @@ function setCls(e) {
   const t = tg.value
   const v = e.target.value
   if (v && taken(v, t)) {
-    fail('Class name already used')
+    fail('Name already used')
     e.target.value = t.cls || ''
     return
   }
@@ -233,37 +237,42 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="work" :class="{ draw: state.tool !== 'select' }" :style="{ background: state.backdrop }" @pointerdown.capture="down" @pointerdown="bg" @dragover.prevent @drop.prevent="drop">
-    <div class="frame" :style="{ width: state.width * z + 'px', height: state.height * z + 'px' }">
-      <div id="stage" class="stage" :style="{ width: state.width + 'px', height: state.height + 'px', background: state.bg, transform: 'scale(' + z + ')', '--z': z }">
-        <template v-for="r in rows" :key="r.key">
-          <Group v-if="r.gid" :gid="r.gid" :items="r.items" />
-          <Item v-else :item="r.item" />
-        </template>
-        <svg v-if="state.draft" class="draft" :width="state.width" :height="state.height">
-          <path :d="dp" fill="none" :stroke="state.draft.color" :stroke-width="state.draft.sw" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <div v-if="gb" class="gbox" :style="gb"></div>
-        <div v-if="state.marq" class="marq" :style="{ left: state.marq.left + 'px', top: state.marq.top + 'px', width: state.marq.width + 'px', height: state.marq.height + 'px' }"></div>
-        <div v-for="(g, i) in state.guides" :key="i" class="guide" :style="g.v ? { left: g.p + 'px', top: 0, bottom: 0, width: '1px' } : { top: g.p + 'px', left: 0, right: 0, height: '1px' }"></div>
+  <Projects v-if="!state.project" />
+  <template v-else>
+    <div class="work" :class="{ draw: state.tool !== 'select' }" :style="{ background: state.backdrop }" @pointerdown.capture="down" @pointerdown="bg" @dragover.prevent @drop.prevent="drop">
+      <div class="frame" :style="{ width: state.width * z + 'px', height: state.height * z + 'px' }">
+        <div id="stage" class="stage" :style="{ width: state.width + 'px', height: state.height + 'px', background: state.bg, transform: 'scale(' + z + ')', '--z': z }">
+          <template v-for="r in rows" :key="r.key">
+            <Group v-if="r.gid" :gid="r.gid" :items="r.items" />
+            <Item v-else :item="r.item" />
+          </template>
+          <svg v-if="state.draft" class="draft" :width="state.width" :height="state.height">
+            <path :d="dp" fill="none" :stroke="state.draft.color" :stroke-width="state.draft.sw" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div v-if="gb" class="gbox" :style="gb"></div>
+          <div v-if="state.marq" class="marq" :style="{ left: state.marq.left + 'px', top: state.marq.top + 'px', width: state.marq.width + 'px', height: state.marq.height + 'px' }"></div>
+          <div v-for="(g, i) in state.guides" :key="i" class="guide" :style="g.v ? { left: g.p + 'px', top: 0, bottom: 0, width: '1px' } : { top: g.p + 'px', left: 0, right: 0, height: '1px' }"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="col">
-    <Animation />
-    <Toolbar />
-  </div>
-  <div v-if="state.menu" class="panel menu" :style="{ left: state.menu.x + 'px', top: state.menu.y + 'px' }" @contextmenu.prevent>
-    <button class="tb" :disabled="selIds().length < 2" @click="doGroup">Group</button>
-    <button class="tb" :disabled="!can" @click="doUngroup">Ungroup</button>
-    <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Class name" @input="cleanCls" @keydown.enter="setCls">
-  </div>
-  <Document />
-  <Layers />
-  <Scripting v-if="state.coding" />
-  <Widgets v-if="state.widgets" />
-  <Pick />
-  <Help v-if="state.help" />
-  <Notice />
+    <div class="col">
+      <Animation />
+      <Toolbar />
+    </div>
+    <div v-if="state.menu" class="panel menu" :style="{ left: state.menu.x + 'px', top: state.menu.y + 'px' }" @contextmenu.prevent>
+      <button class="tb" :disabled="selIds().length < 2" @click="doGroup">Group</button>
+      <button class="tb" :disabled="!can" @click="doUngroup">Ungroup</button>
+      <input v-if="tg" class="cls" :value="tg.cls || ''" placeholder="Name" @input="cleanCls" @keydown.enter="setCls">
+    </div>
+    <Document />
+    <Layers />
+    <Scripting v-if="state.coding && state.mode === 'blockly'" />
+    <Code v-if="state.coding && state.mode === 'js'" />
+    <Widgets v-if="state.widgets" />
+    <Pick />
+    <Help v-if="state.help" />
+    <Notice />
+  </template>
+  <Confirm />
   <ErrorBar />
 </template>

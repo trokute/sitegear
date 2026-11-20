@@ -1,4 +1,4 @@
-import { reactive, ref, watch } from 'vue'
+import { nextTick, reactive, ref, watch } from 'vue'
 import { bounds } from './geom'
 import { googleSet, googleUrl } from './fonts'
 
@@ -40,6 +40,13 @@ export const state = reactive({
   help: false,
   pending: null,
   script: null,
+  js: '',
+  tab: 'main',
+  mode: 'blockly',
+  project: null,
+  name: '',
+  dirty: false,
+  ask: null,
   sounds: [],
   audio: { bg: '', vol: 100 },
   error: '',
@@ -99,7 +106,57 @@ function swap(o, from, to) {
 
 export function renameClass(from, to) {
   swap(state.script, from, to)
+  const quoted = new RegExp('(["\'])((?:click|down|up|in|out):)?' + from + '\\1', 'g')
+  const bare = new RegExp('(?<![\\w$."\'])' + from + '(?![\\w$"\'])', 'g')
+  const swapJs = v => v.replace(quoted, (m, q, e) => q + (e || '') + to + q).replace(bare, to)
+  state.js = swapJs(state.js)
+  scripts().forEach(s => {
+    if (s.obj.js) s.obj.js = swapJs(s.obj.js)
+  })
   renames.forEach(f => f(from, to))
+}
+
+const kinds = { text: 'Text', image: 'Image', rect: 'Rectangle', circle: 'Circle', stroke: 'Stroke', widget: 'Widget', media: 'Media' }
+
+export function scripts() {
+  const out = []
+  state.pages.forEach((p, page) => {
+    p.items.forEach(i => out.push({ key: 'i' + i.id, page, ids: [i.id], obj: i, label: i.cls || (kinds[i.type] || 'Element') + ' ' + i.id }))
+    Object.entries(p.groups).forEach(([g, a]) => out.push({ key: 'g' + p.id + '.' + g, page, ids: p.items.filter(i => i.gid === Number(g)).map(i => i.id), obj: a, label: a.cls || 'Group ' + g }))
+  })
+  return out
+}
+
+export function holder(tab) {
+  if (tab === 'main') return state
+  const s = scripts().find(x => x.key === tab)
+  return s ? s.obj : null
+}
+
+export function selKey() {
+  const t = animTarget()
+  if (!t) return 'main'
+  return t.grp ? 'g' + state.pages[state.page].id + '.' + t.gid : 'i' + t.id
+}
+
+export function focus(tab) {
+  state.tab = tab
+  const s = scripts().find(x => x.key === tab)
+  if (!s) return
+  state.page = s.page
+  nextTick(() => pick(s.ids))
+}
+
+export function confirm(msg, yes) {
+  state.ask = { msg, yes }
+}
+
+export function data() {
+  return { pages: state.pages, backdrop: state.backdrop, fonts: state.fonts, script: state.script, js: state.js, mode: state.mode, sounds: state.sounds, audio: state.audio }
+}
+
+export function blank(mode) {
+  return { pages: [newPage()], backdrop: '#ffffff', fonts: [defaultFont], script: null, js: '', mode, sounds: [], audio: { bg: '', vol: 100 } }
 }
 
 export function selected() {
@@ -453,6 +510,8 @@ export function load(d) {
   state.widgets = false
   state.pending = null
   state.script = d.script || null
+  state.js = d.js || ''
+  state.mode = d.mode || 'blockly'
   state.sounds = d.sounds || []
   state.audio = d.audio || { bg: '', vol: 100 }
   state.fonts = d.fonts && d.fonts.length ? d.fonts : [defaultFont]
@@ -462,6 +521,7 @@ export function load(d) {
   gn = Math.max(0, ...pages.flatMap(p => p.items.map(i => i.gid || 0)))
   pn = Math.max(0, ...pages.map(p => p.id))
   state.fonts.forEach(loadFont)
+  reset()
 }
 
 const loaded = new Set()
@@ -478,14 +538,30 @@ const past = []
 const future = []
 let timer = 0
 let cur = snap()
+let saved = ''
 
 function snap() {
   return JSON.stringify({ pages: state.pages, backdrop: state.backdrop, fonts: state.fonts })
 }
 
+function reset() {
+  clearTimeout(timer)
+  timer = 0
+  past.length = 0
+  future.length = 0
+  cur = snap()
+  markSaved()
+}
+
+export function markSaved() {
+  saved = JSON.stringify(data())
+  state.dirty = false
+}
+
 function commit() {
   clearTimeout(timer)
   timer = 0
+  state.dirty = JSON.stringify(data()) !== saved
   const s = snap()
   if (s === cur) return
   past.push(cur)
@@ -521,7 +597,11 @@ export function redo() {
   apply(cur)
 }
 
-watch(() => [state.pages, state.backdrop, state.fonts], () => {
+watch(() => [state.pages, state.backdrop, state.fonts, state.script, state.js, state.mode, state.sounds, state.audio], () => {
   clearTimeout(timer)
   timer = setTimeout(commit, 300)
 }, { deep: true })
+
+export function classes() {
+  return [...new Set(state.pages.flatMap(p => [...p.items, ...Object.values(p.groups)].map(i => i.cls)).filter(Boolean))]
+}

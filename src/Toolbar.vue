@@ -1,10 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { state, selected, animTarget, selIds, addText, addImage, addFont, loadFont, remove, undo, redo, load, fail } from './store'
+import { state, selected, animTarget, selIds, addText, addImage, addFont, loadFont, remove, undo, redo } from './store'
 import { preview, download } from './export'
 import Icon from './Icon.vue'
 import { googleFonts, googleAll, family } from './fonts'
-import { closeKeys } from './anim'
+import { save, leave } from './projects'
 import { offer } from './media'
 
 const open = ref(true)
@@ -16,7 +16,6 @@ const slotLink = ref('')
 const slots = ['mine', 'tile', 'flag', '1', '2', '3', '4', '5', '6', '7', '8']
 const titles = { text: 'Text', image: 'Image', rect: 'Rectangle', stroke: 'Stroke', widget: 'Widget', media: 'Media' }
 const plain = ['image', 'widget', 'media']
-const file = ref(null)
 const it = computed(selected)
 const gi = computed(() => {
   const t = animTarget()
@@ -62,33 +61,6 @@ function fonts() {
   loadFont({ link: googleAll })
 }
 
-function save() {
-  try {
-    closeKeys()
-    const d = { pages: state.pages, backdrop: state.backdrop, fonts: state.fonts, script: state.script, sounds: state.sounds, audio: state.audio }
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' }))
-    a.download = 'project.json'
-    a.click()
-  } catch (e) {
-    fail('Failed to save project')
-  }
-}
-
-function openFile(file) {
-  file.text().then(t => {
-    const d = JSON.parse(t)
-    if (!Array.isArray(d.pages) && !Array.isArray(d.items)) throw new Error()
-    load(d)
-  }).catch(() => fail('Invalid project file'))
-}
-
-function pick(e) {
-  const f = e.target.files[0]
-  if (f) openFile(f)
-  e.target.value = ''
-}
-
 function tool(t) {
   state.tool = t
 }
@@ -112,10 +84,9 @@ function tool(t) {
       </div>
       <div class="line">
         <Icon title="Save" :n="6" @click="save" />
-        <Icon title="Open" :n="7" @click="file.click()" />
+        <Icon title="Load" :n="7" @click="leave" />
         <Icon title="Preview" :n="8" @click="preview" />
         <Icon title="Export" :n="9" @click="download" />
-        <input ref="file" type="file" accept=".json,application/json" hidden @change="pick">
       </div>
       <div class="line">
         <input v-model="link" placeholder="Image link or drop a file" @keydown.enter="img">

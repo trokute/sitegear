@@ -1,8 +1,9 @@
 <script setup>
 import { ref } from 'vue'
-import { state, selected, addPage, deletePage, go, copyPage, align, fail } from './store'
+import { state, selected, addPage, deletePage, go, copyPage, align, fail, confirm } from './store'
 import Icon from './Icon.vue'
 import { addSound, addFiles } from './sounds'
+import { toJs } from './projects'
 
 const open = ref(true)
 const src = ref(0)
@@ -46,6 +47,10 @@ function addSnd() {
   sndLink.value = ''
 }
 
+function migrate() {
+  confirm('Switch to JavaScript? Blocks are converted and you cannot go back to blocks.', toJs)
+}
+
 function size(s) {
   state.width = s.w
   state.height = s.h
@@ -64,6 +69,9 @@ function size(s) {
     <div v-if="open" class="body">
       <div class="line">
         <button class="tb" @click="state.coding = !state.coding">Open scripting window</button>
+      </div>
+      <div v-if="state.mode === 'blockly'" class="line">
+        <button class="tb" @click="migrate">Migrate to JavaScript</button>
       </div>
       <div class="line">
         <button class="tb" @click="state.widgets = !state.widgets">Open widget window</button>
