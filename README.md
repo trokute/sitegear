@@ -1,22 +1,22 @@
 # sitegear
 
-### 0.8.3
+### 0.8.3(unlisted)
 
 ## What's changed:
 
-* Added Help Window
-* Added Widgets (soon more to be added)
-* Video, audio, youtube link embed/player
-* refactored some of the code
-* Bugfixes
+* new project management system
+* Beta sg Scripting api (no docs yet)
 
 ## Note:
-big thanks for unable to contribute (especially widgets!)
+unable really did awesome on the UI so kudos for them! they wrote most of the frontend while I go with the backend tho sometimes they helps me.
+
 Contributions are welcome!
 
 ## Roadmaps:
-* more widgets
-* better align
-* js scripting api instead of blockly (advanced)
+[] more widgets
+[x] better align
+[x] js scripting api instead of blockly (advanced)
+[] docs/ including javascript api documentation 
+
 
 ###### @trokute in discord for feature request/bugs
